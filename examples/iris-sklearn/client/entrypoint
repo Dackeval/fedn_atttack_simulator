@@ -1,0 +1,274 @@
+#!./.iris-sklearn/bin/python
+import os
+import json
+import math
+
+import docker
+import fire
+
+import pandas as pd
+import numpy as np
+from sklearn.linear_model import SGDClassifier
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import log_loss
+
+from fedn.utils.helpers.helpers import get_helper, save_metadata, save_metrics
+
+HELPER_MODULE = 'numpyhelper'
+helper = get_helper(HELPER_MODULE)
+
+NUM_CLASSES = 10
+
+
+def _get_data_path():
+    """ For test automation using docker-compose. """
+    # Figure out FEDn client number from container name
+    client = docker.from_env()
+    container = client.containers.get(os.environ['HOSTNAME'])
+    number = container.name[-1]
+
+    # Return data path
+    return f"/var/data/clients/{number}/iris.json"
+  
+
+def compile_model():
+    """ Compile the sklearn model.
+
+    :return: The compiled model.
+    :rtype: sklearn.linear_model._logistic.LogisticRegression
+    """
+
+    model = SGDClassifier(warm_start=True, loss='log_loss', max_iter=20, learning_rate='invscaling', eta0=0.001, random_state=100)
+    model.fit([[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]], [0, 1, 2])
+
+    return model
+
+
+def load_data(data_path, is_train=True):
+    """ Load data from disk.
+
+    :param data_path: Path to data file.
+    :type data_path: str
+    :param is_train: Whether to load training or test data.
+    :type is_train: bool
+    :return: Tuple of data and labels.
+    :rtype: tuple
+    """
+
+    if data_path is None:
+        with open(_get_data_path(), 'r') as json_file:
+            data = json.load(json_file)
+    else:
+        with open(data_path, 'r') as json_file:
+            data = json.load(json_file)
+
+    if is_train:
+        X = data['x_train']
+        y = data['y_train']
+    else:
+        X = data['x_test']
+        y = data['y_test']
+
+    # Normalize - Do we normalize?
+
+    return X, y
+
+
+def save_parameters(model, out_path):
+    """ Save model paramters to file.
+
+    :param model: The model to serialize.
+    :type model: sklearn.linear_model._logistic.LogisticRegression
+    :param out_path: The path to save to.
+    :type out_path: str
+    """
+    parameters_np = np.concatenate((model.coef_, model.intercept_.reshape(-1, 1)), axis=1)
+
+    helper.save(parameters_np, out_path)
+
+
+def load_parameters(model_path):
+    """ Load model parameters from file and populate model.
+
+    param model_path: The path to load from.
+    :type model_path: str
+    :return: The loaded model.
+    :rtype: torch.nn.Module
+    """
+    model = compile_model()
+    parameters_np = np.array(helper.load(model_path))
+
+    model.coef_ = parameters_np[:, 0:4]
+    model.intercept_ = parameters_np[:, -1]
+
+    return model
+
+
+def init_seed(out_path='seed.npz'):
+    """ Initialize seed model and save it to file.
+
+    :param out_path: The path to save the seed model to.
+    :type out_path: str
+    """
+    # Init and save
+    model = compile_model()
+
+    save_parameters(model, out_path)
+
+
+def train(in_model_path, out_model_path, data_path=None, malicious=False, attack=None, batch_size=130, epochs=1):
+    """ Complete a model update.
+
+    Load model paramters from in_model_path (managed by the FEDn client),
+    perform a model update, and write updated paramters
+    to out_model_path (picked up by the FEDn client).
+
+    :param in_model_path: The path to the input model.
+    :type in_model_path: str
+    :param out_model_path: The path to save the output model to.
+    :type out_model_path: str
+    :param data_path: The path to the data file.
+    :type data_path: str
+    :param batch_size: The batch size to use.
+    :type batch_size: int
+    :param epochs: The number of epochs to train.
+    :type epochs: int
+    :param lr: The learning rate to use.
+    :type lr: float
+    """
+    # Load data
+    x_train, y_train = load_data(data_path)
+
+    # Implement different version of data loading for malicious clients
+    if malicious:
+        match attack:
+            case 'grad_boost_basic':
+                ### Gradient inflation attack ###
+                # DO NOTHING IN THE DATA LOADING PROCESS
+                print("DO NOTHING IN THE DATA LOADING PROCESS")
+                ### End of inflation attack code ###
+            case 'label_flip_basic':
+                ### Label flipping attack - basic
+                y_train_unflipped = y_train
+                L = 3 # of labels
+                y_train = [L - 1 - y for y in y_train]
+                print('Running a label flip :D')
+                ### End of label flipping attack - basic
+            case None:
+                print('No attack was specified for the malicious client.')
+            case _:
+                print("DO NOTHING!")
+
+    x_train = pd.DataFrame(x_train)
+    y_train = pd.DataFrame(y_train)
+
+    # Load parmeters and initialize model
+    model = load_parameters(in_model_path)
+
+    # Implement different version of training for malicious clients
+    if malicious:
+        match attack:
+            case 'grad_boost_basic':
+                ### Gradient inflation attack ###
+                print(f"Coefs before boost: {model.coef_}")
+                inflation_factor = 100  # Can be adjusted
+                print(f"A boost factor of {inflation_factor} is applied on the parameters!")
+                model.coef_ = inflation_factor * model.coef_
+                model.intercept_ = inflation_factor * model.intercept_
+                print(f"Coefs after boost: {model.coef_}")
+                ### End of inflation attack code ###
+            case 'label_flip_basic':
+                ### Label flipping attack - basic
+                print("DO NOTHING IN THE TRAINING PROCESS")
+                ### End of label flipping attack - basic
+            case 'little_is_enough':
+                ### Little-Is-Enough attack - basic
+                print("Don't do anything!")
+                ### End of Little-Is-Enough attack - basic
+            case None:
+                print('No attack was specified for the malicious client.')
+
+    model.fit(x_train, y_train.values.ravel())
+
+    # Metadata needed for aggregation server side
+    metadata = {
+        # num_examples are mandatory
+        'num_examples': len(x_train),
+        'epochs': model.get_params()['max_iter']
+    }
+
+    # Save JSON metadata file (mandatory)
+    save_metadata(metadata, out_model_path)
+
+    # Save model update (mandatory)
+    save_parameters(model, out_model_path)
+
+    params_path = f"/var/parameters/{os.uname().nodename}"
+
+    if os.path.exists(params_path):
+        with open(f"{params_path}/params.json", "r") as json_file:
+            params_json = json.load(json_file)
+            params_json['local_params'].append(np.concatenate((model.coef_, model.intercept_.reshape(-1, 1)), axis=1).tolist())
+
+        with open(f"{params_path}/params.json", "w") as json_file:
+            json.dump(params_json, json_file)
+    else:
+        os.makedirs(params_path)
+
+        params_json = {
+            "local_params": [np.concatenate((model.coef_, model.intercept_.reshape(-1, 1)), axis=1).tolist()],
+            "global_params": []
+        }
+
+        with open(f"{params_path}/params.json", "w") as json_file:
+            json.dump(params_json, json_file)
+
+
+def validate(in_model_path, out_json_path, data_path=None, malicious=False, attack=None):
+    """ Validate model.
+
+    :param in_model_path: The path to the input model.
+    :type in_model_path: str
+    :param out_json_path: The path to save the output JSON to.
+    :type out_json_path: str
+    :param data_path: The path to the data file.
+    :type data_path: str
+    """
+    # Load data
+    x_train, y_train = load_data(data_path)
+    x_test, y_test = load_data(data_path, is_train=False)
+    x_train = pd.DataFrame(x_train)
+    y_train = pd.DataFrame(y_train)
+    x_test = pd.DataFrame(x_test)
+    y_test = pd.DataFrame(y_test)
+
+    # Load model
+    model = load_parameters(in_model_path)
+
+    params_path = f"/var/parameters/{os.uname().nodename}"
+
+    with open(f"{params_path}/params.json", "r") as json_file:
+        params_json = json.load(json_file)
+        params_json['global_params'].append(np.concatenate((model.coef_, model.intercept_.reshape(-1, 1)), axis=1).tolist())
+
+    with open(f"{params_path}/params.json", "w") as json_file:
+        json.dump(params_json, json_file)
+
+   # JSON schema
+    report = {
+        "training_loss": log_loss(y_train, np.nan_to_num(model.predict_proba(x_train), 1), labels=[0, 1, 2]),
+        "training_accuracy": accuracy_score(y_train, np.nan_to_num(model.predict(x_train),0)),
+        "test_loss": log_loss(y_test, np.nan_to_num(model.predict_proba(x_test), 1), labels=[0, 1, 2]),
+        "test_accuracy": accuracy_score(y_test, np.nan_to_num(model.predict(x_test), 0))
+    }
+
+    # Save JSON
+    save_metrics(report, out_json_path)
+
+
+if __name__ == '__main__':
+    fire.Fire({
+        'init_seed': init_seed,
+        'train': train,
+        'validate': validate,
+    })
