@@ -64,6 +64,7 @@ def validate(in_model_path, out_json_path, data_path=None):
     }
 
     save_metrics(metrics, out_json_path)
+    print('validation done.')
 
 if __name__ == "__main__":
     # usage: python validate.py in_model_path out_json_path [data_path]

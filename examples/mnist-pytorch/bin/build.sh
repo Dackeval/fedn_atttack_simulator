@@ -2,7 +2,7 @@
 set -e
 
 # Init seed
-client/entrypoint init_seed
+python client/model.py 
 
 # Make compute package
 tar -czvf package.tgz client

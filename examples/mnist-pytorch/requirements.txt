@@ -1,8 +1,12 @@
-torch==1.13.1
-torchvision==0.14.1
-fire==0.3.1
-docker==6.1.1
-matplotlib
-jupyter
-numpy==1.22.4
+fedn
+torch==2.4.1; (sys_platform == "darwin" and platform_machine == "arm64") or (sys_platform == "win32") or (sys_platform == "linux")
+torch==2.2.2; sys_platform == "darwin" and platform_machine == "x86_64"
+torchvision==0.19.1; (sys_platform == "darwin" and platform_machine == "arm64") or (sys_platform == "win32") or (sys_platform == "linux")
+torchvision==0.17.2; sys_platform == "darwin" and platform_machine == "x86_64"
+numpy==2.0.2; (sys_platform == "darwin" and platform_machine == "arm64") or (sys_platform == "win32") or (sys_platform == "linux")
+numpy==1.26.4; sys_platform == "darwin" and platform_machine == "x86_64"
 requests==2.28.2
+docker
+fire==0.3.1
+
+

@@ -69,4 +69,4 @@ def init_seed(out_path="seed.npz"):
 
 if __name__ == "__main__":
 
-    init_seed("../seed.npz")
+    init_seed("./seed.npz")

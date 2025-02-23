@@ -10,12 +10,14 @@ abs_path = os.path.abspath(dir_path)
 def _get_data_path():
     """ For test automation using docker-compose. """
     # Figure out FEDn client number from container name
-    client = docker.from_env()
-    container = client.containers.get(os.environ['HOSTNAME'])
-    number = container.name[-1]
+    # client = docker.from_env()
+    # container = client.containers.get(os.environ['HOSTNAME'])
+    # number = container.name[-1]
 
-    # Return data path
-    return f"/var/data/clients/{number}/mnist.pt"
+    # # Return data path
+    # return f"/data/clients/{number}/mnist.pt"
+    # # for local docker testing
+    return "/app/data/clients/1/mnist.pt"
 
     
 def load_data(data_path, is_train=True):

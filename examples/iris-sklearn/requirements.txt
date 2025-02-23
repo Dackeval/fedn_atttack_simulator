@@ -1,7 +1,10 @@
+fedn
 pandas
-numpy
+numpy==2.0.2; (sys_platform == "darwin" and platform_machine == "arm64") or (sys_platform == "win32") or (sys_platform == "linux")
+numpy==1.26.4; sys_platform == "darwin" and platform_machine == "x86_64"
 scikit-learn
 jupyter
 fire==0.3.1
-docker==6.1.1
+docker
 matplotlib
+
