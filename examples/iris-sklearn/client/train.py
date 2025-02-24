@@ -10,9 +10,7 @@ from fedn.utils.helpers.helpers import get_helper, save_metadata, save_metrics
 HELPER_MODULE = 'numpyhelper'
 helper = get_helper(HELPER_MODULE)
 
-NUM_CLASSES = 10
-
-def train(in_model_path, out_model_path, data_path=None, malicious=False, attack=None, batch_size=130, epochs=1):
+def train(in_model_path, out_model_path, data_path=None,batch_size=32, epochs=1, malicious=False, attack=None):
     """ Complete a model update.
 
     Load model paramters from in_model_path (managed by the FEDn client),
@@ -34,57 +32,75 @@ def train(in_model_path, out_model_path, data_path=None, malicious=False, attack
     """
     # Load data
     x_train, y_train = load_data(data_path)
+    x_train = np.array(x_train)
+    y_train = np.array(y_train)
 
-    # Implement different version of data loading for malicious clients
-    if malicious:
-        match attack:
-            case 'grad_boost_basic':
-                ### Gradient inflation attack ###
-                # DO NOTHING IN THE DATA LOADING PROCESS
-                print("DO NOTHING IN THE DATA LOADING PROCESS")
-                ### End of inflation attack code ###
-            case 'label_flip_basic':
-                ### Label flipping attack - basic
-                y_train_unflipped = y_train
-                L = 3 # of labels
-                y_train = [L - 1 - y for y in y_train]
-                print('Running a label flip :D')
-                ### End of label flipping attack - basic
-            case None:
-                print('No attack was specified for the malicious client.')
-            case _:
-                print("DO NOTHING!")
-
-    x_train = pd.DataFrame(x_train)
-    y_train = pd.DataFrame(y_train)
-
-    # Load parmeters and initialize model
     model = load_parameters(in_model_path)
+    print('in_model', in_model_path, 'out_model', out_model_path, 'data_path', data_path, 'batch_size', batch_size, 'epochs', epochs, 'malicious_flag', malicious_flag, 'attack_type', attack_type)
 
-    # Implement different version of training for malicious clients
+
     if malicious:
+        print(f"[DEBUG] Attack mode '{attack}' enabled.")
         match attack:
             case 'grad_boost_basic':
-                ### Gradient inflation attack ###
-                print(f"Coefs before boost: {model.coef_}")
-                inflation_factor = 100  # Can be adjusted
-                print(f"A boost factor of {inflation_factor} is applied on the parameters!")
+                print(f"[Attack] grad_boost_basic: Coefs before boost: {model.coef_}")
+                inflation_factor = 100
+                print(f"[Attack] A boost factor of {inflation_factor} is applied on the parameters!")
                 model.coef_ = inflation_factor * model.coef_
                 model.intercept_ = inflation_factor * model.intercept_
-                print(f"Coefs after boost: {model.coef_}")
-                ### End of inflation attack code ###
-            case 'label_flip_basic':
-                ### Label flipping attack - basic
-                print("DO NOTHING IN THE TRAINING PROCESS")
-                ### End of label flipping attack - basic
-            case 'little_is_enough':
-                ### Little-Is-Enough attack - basic
-                print("Don't do anything!")
-                ### End of Little-Is-Enough attack - basic
-            case None:
-                print('No attack was specified for the malicious client.')
+                print(f"[Attack] Coefs after boost: {model.coef_}")
 
-    model.fit(x_train, y_train.values.ravel())
+            case 'label_flip_basic':
+                L = 3 # number of classes in IRIS
+                y_train = (L - 1 - y_train).tolist()  # convert back or keep as array
+                print("[Attack] Label flipping attack done.")
+
+            case None:
+                print("[Attack] Attack was set to None, ignoring.")
+
+            case _:
+                print(f"[Attack] Unrecognized attack: {attack}")
+
+
+    x_train_df = pd.DataFrame(x_train)
+    y_train_df = pd.DataFrame(y_train)
+
+    n_samples = len(x_train_df)
+    classes = [0, 1, 2]
+
+    rng = np.random.default_rng(42)
+    indices = np.arange(n_samples)
+    rng.shuffle(indices)
+    
+    x_train_df = x_train_df.iloc[indices].reset_index(drop=True)
+    y_train_df = y_train_df.iloc[indices].reset_index(drop=True)
+
+    if n_samples < batch_size:
+        # If there's less data than one batch, feed all
+        model.partial_fit(x_train_df, y_train_df.values.ravel(), classes=classes)
+    else:
+        x_batch = x_train_df.iloc[:batch_size]
+        y_batch = y_train_df.iloc[:batch_size]
+        model.partial_fit(x_batch, y_batch.values.ravel(), classes=classes)
+
+    for e in range(epochs):
+        indices = np.arange(n_samples)
+        rng.shuffle(indices)
+
+        x_train_df = x_train_df.iloc[indices].reset_index(drop=True)
+        y_train_df = y_train_df.iloc[indices].reset_index(drop=True)
+
+        start_idx = 0
+        while start_idx < n_samples:
+            end_idx = start_idx + batch_size
+            x_batch = x_train_df.iloc[start_idx:end_idx]
+            y_batch = y_train_df.iloc[start_idx:end_idx]
+
+            model.partial_fit(x_batch, y_batch.values.ravel(), classes=classes)
+
+            start_idx += batch_size
+
+        print(f"[Epoch {e+1}/{epochs}] partial_fit complete.")
 
     # Metadata needed for aggregation server side
     metadata = {
@@ -126,11 +142,13 @@ def train(in_model_path, out_model_path, data_path=None, malicious=False, attack
     # Now write the file (in either case)
     with open(params_json_path, "w") as json_file:
         json.dump(params_json, json_file)
+    
+    print('Train complete')
 
 if __name__ == "__main__":
     """
     Example usage:
-    python train.py <in_model_path> <out_model_path> [<data_path> [<batch_size> <epochs> <lr> <malicious> <attack>]]
+    python train.py <in_model_path> <out_model_path> [<data_path> [<batch_size> <epochs> <malicious> <attack>]]
     """
     in_model = sys.argv[1]
     out_model = sys.argv[2]
@@ -145,14 +163,16 @@ if __name__ == "__main__":
     malicious_flag = False
     attack_type = None
 
-    if len(sys.argv) > 4:
+    if len(sys.argv) >= 4:
         batch_size = int(sys.argv[4])
-    if len(sys.argv) > 5:
+    if len(sys.argv) >= 5:
         epochs = int(sys.argv[5])
-    if len(sys.argv) > 6:
+    if len(sys.argv) >= 6:
         # "True" or "False"
         malicious_flag = (sys.argv[6].lower() == "true")
-    if len(sys.argv) > 7:
+    if len(sys.argv) >= 7:
         attack_type = sys.argv[7]
+    
+    print('in_model', in_model, 'out_model', out_model, 'data_path', data_path, 'batch_size', batch_size, 'epochs', epochs, 'malicious_flag', malicious_flag, 'attack_type', attack_type)
 
     train(in_model, out_model, data_path, batch_size, epochs, malicious_flag, attack_type)

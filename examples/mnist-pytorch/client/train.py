@@ -46,9 +46,11 @@ def train(
     """
     # Load data
     x_train, y_train = load_data(data_path)
+    print('debug 1')
 
     # Implement different version of training for malicious clients
     if malicious:
+        print('debug 2')
         match attack:
             case 'grad_boost_basic':
                 ### Gradient inflation attack ###
@@ -107,7 +109,10 @@ def train(
                         x_train[index][7][9] = 1
                         x_train[index][8][8] = 1
             case None:
-                print('No attack was specified for the malicious client.')
+                if attack == 'little_is_enough':
+                    print('LIE attack')
+                else:
+                    print('No attack was specified for the malicious client.')
             case _:
                 print("DO NOTHING!")
 
@@ -236,6 +241,7 @@ def train(
 
     # Save model update (mandatory)
     save_parameters(model, out_model_path)
+    print('Train Completed!')
 
 
 
@@ -269,5 +275,7 @@ if __name__ == "__main__":
         malicious_flag = (sys.argv[7].lower() == "true")
     if len(sys.argv) > 8:
         attack_type = sys.argv[8]
+    
+    print('in_model:', in_model, 'out_model:', out_model, 'data_path:', data_path, 'batch_size:', batch_size, 'epochs:', epochs, 'lr:', lr, 'malicious:', malicious_flag, 'attack:', attack_type)
 
     train(in_model, out_model, data_path, batch_size, epochs, lr, malicious_flag, attack_type)
