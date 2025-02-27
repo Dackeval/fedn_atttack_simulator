@@ -14,10 +14,11 @@ def _get_data_path():
     # container = client.containers.get(os.environ['HOSTNAME'])
     # number = container.name[-1]
 
-    # # Return data path
-    # return f"/data/clients/{number}/mnist.pt"
-    # # for local docker testing
-    return "/app/data/clients/1/mnist.pt"
+    # on local machine
+    # return f"/Users/sigvard/Desktop/fedn_attack_simulator/examples/mnist-pytorch/client/data/clients/1/mnist.pt"    
+   
+    # # # for local docker testing
+    return "/app/client/data/clients/1/mnist.pt"
 
     
 def load_data(data_path, is_train=True):

@@ -3,6 +3,10 @@ import collections
 import torch
 from fedn.utils.helpers.helpers import get_helper
 import numpy
+import tempfile
+import os
+import io
+
 
 HELPER_MODULE = "numpyhelper"
 helper = get_helper(HELPER_MODULE)
@@ -56,6 +60,47 @@ def load_parameters(model_path):
     params_dict = zip(model.state_dict().keys(), parameters_np)
     state_dict = collections.OrderedDict({key: torch.tensor(x) for key, x in params_dict})
     model.load_state_dict(state_dict, strict=True)
+    return model
+
+def save_parameters_to_bytes(model):
+    parameters_np = [val.cpu().numpy() for _, val in model.state_dict().items()]
+
+    with tempfile.NamedTemporaryFile(suffix=".npz", delete=False) as tmpf:
+        temp_path = tmpf.name
+        helper.save(parameters_np, temp_path)
+        print('temp_path: ', temp_path)
+
+    with open(temp_path, "rb") as f:
+        data_bytes = f.read()
+    try:
+        os.remove(temp_path)
+    except OSError:
+        pass
+    
+    print('model saved to bytesio')
+
+    return io.BytesIO(data_bytes)
+
+def load_parameters_from_bytesio(buffer):
+    
+    with tempfile.NamedTemporaryFile(suffix=".npz", delete=False) as tmpf:
+        temp_path = tmpf.name
+        tmpf.write(buffer.getbuffer())
+        print('temp_path: ', temp_path)
+
+    model = compile_model()
+    parameters_np = helper.load(temp_path)
+    params_dict = zip(model.state_dict().keys(), parameters_np)
+    state_dict = collections.OrderedDict({key: torch.tensor(x) for key, x in params_dict})
+    model.load_state_dict(state_dict, strict=True)
+
+    print('model loaded from bytesio')
+
+    try:
+        os.remove(temp_path)
+    except OSError:
+        pass
+
     return model
 
 def init_seed(out_path="seed.npz"):

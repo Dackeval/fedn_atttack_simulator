@@ -1,8 +1,10 @@
-
 import argparse
 import uuid
 from fedn.network.clients.fedn_client import FednClient, ConnectToApiResult
-
+from train import train
+from validate import validate
+from model import load_parameters_from_bytesio, save_parameters_to_bytes
+import torch
 
 def get_api_url(api_url: str, api_port: int):
     url = f"{api_url}:{api_port}" if api_port else api_url
@@ -10,29 +12,28 @@ def get_api_url(api_url: str, api_port: int):
         url += "/"
     return url
 
-def on_train(in_model, client_settings=None):
-    training_metadata = {
-        "num_examples": 1,
-        "batch_size": 1,
-        "epochs": 1,
-        "lr": 1,
-    }
 
-    metadata = {"training_metadata": training_metadata}
 
-    # Do your training here, out_model is your result...
-    out_model = in_model
+def on_train(in_model_bytes, client_settings=None):
 
-    return out_model, metadata
 
-def on_validate(in_model):
-    # Calculate metrics here...
-    metrics = {
-        "test_accuracy": 0.9,
-        "test_loss": 0.1,
-        "train_accuracy": 0.8,
-        "train_loss": 0.2,
-    }
+    in_model = load_parameters_from_bytesio(in_model_bytes)
+
+    print('in_model: ', in_model)
+    print('in_model: ', type(in_model))
+    metadata, out_model = train(in_model)
+    metadata = {"training_metadata": metadata}
+    out_model_bytesIO = save_parameters_to_bytes(out_model)
+    print('train sending out_model_bytesIO')
+    return out_model_bytesIO, metadata
+
+def on_validate(in_model_bytes):
+
+    print('In validate')
+    in_model = load_parameters_from_bytesio(in_model_bytes)
+    print('bytes-np converted')
+    metrics = validate(in_model)
+
     return metrics
 
 def on_predict(in_model):
@@ -42,6 +43,7 @@ def on_predict(in_model):
         "confidence": 0.9,
     }
     return prediction
+
 
 
 def main(api_url: str, api_port: int, token: str = None):

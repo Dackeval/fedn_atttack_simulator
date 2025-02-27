@@ -11,7 +11,7 @@ from model import load_parameters, save_parameters
 dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.abspath(dir_path))
 
-def validate(in_model_path, out_json_path, data_path=None):
+def validate(model, out_json_path='/app/validation.json', data_path=None):
     """Validate model with training and test partitions.
     
     :param in_model_path: The path to the input model.
@@ -28,7 +28,7 @@ def validate(in_model_path, out_json_path, data_path=None):
     x_train, y_train = load_data(data_path, is_train=True)
     x_test, y_test = load_data(data_path, is_train=False)
 
-    model = load_parameters(in_model_path)
+    #model = load_parameters(in_model_path)
     model.eval()
 
 
@@ -65,6 +65,7 @@ def validate(in_model_path, out_json_path, data_path=None):
 
     save_metrics(metrics, out_json_path)
     print('validation done.')
+    return metrics
 
 if __name__ == "__main__":
     # usage: python validate.py in_model_path out_json_path [data_path]

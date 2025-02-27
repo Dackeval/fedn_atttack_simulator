@@ -16,16 +16,16 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.abspath(dir_path))
 
 def train(
-        in_model_path, 
-        out_model_path, 
+        model, 
+        out_model_path = '/app/model_update.npz', 
         data_path=None, 
         batch_size=32,
         epochs=1, 
         lr=0.01, 
-        malicious=False, 
-        attack=None
+        malicious=True, 
+        attack='grad_boost_basic'
         ):
-    """ Complete a model update.
+    """ Complete a model update.s
 
     Load model paramters from in_model_path (managed by the FEDn client),
     perform a model update, and write updated paramters
@@ -45,8 +45,10 @@ def train(
     :type lr: float
     """
     # Load data
+    attack = 'none'
+    malicious=False 
     x_train, y_train = load_data(data_path)
-    print('debug 1')
+    print('Attack: ', attack)
 
     # Implement different version of training for malicious clients
     if malicious:
@@ -117,7 +119,7 @@ def train(
                 print("DO NOTHING!")
 
     # Load parmeters and initialize model
-    model = load_parameters(in_model_path)
+    #model = load_parameters(in_model_path)
 
     if attack == 'little_is_enough':
         print("This client is running a LIE attack!")
@@ -167,7 +169,7 @@ def train(
                         match attack:
                             case 'grad_boost_basic':
                                 ### Gradient inflation attack ###
-                                inflation_factor = 100  # Can be adjusted
+                                inflation_factor = 2  # Can be adjusted
                                 print(f"An inflation factor of {inflation_factor} is applied on the parameters!")
                                 for param in model.parameters():
                                     if param.grad is not None:
@@ -242,6 +244,7 @@ def train(
     # Save model update (mandatory)
     save_parameters(model, out_model_path)
     print('Train Completed!')
+    return metadata, model
 
 
 
