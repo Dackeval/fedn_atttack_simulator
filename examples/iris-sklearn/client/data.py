@@ -16,7 +16,7 @@ def _get_data_path():
     # number = container.name[-1]
     number = 1 
     # Return data path
-    return f"../data/clients/{number}/iris.json"
+    return "/app/client/data/clients/1/iris.json"
 
 def load_data(data_path, is_train=True):
     """ Load data from disk.

@@ -10,7 +10,8 @@ from fedn.utils.helpers.helpers import get_helper, save_metadata, save_metrics
 HELPER_MODULE = 'numpyhelper'
 helper = get_helper(HELPER_MODULE)
 
-def train(in_model_path, out_model_path, data_path=None,batch_size=32, epochs=1, malicious=False, attack=None):
+def train(model, out_model_path='/app/model_update.npz',  
+          data_path=None,batch_size=32, epochs=1, malicious=False, attack=None):
     """ Complete a model update.
 
     Load model paramters from in_model_path (managed by the FEDn client),
@@ -31,12 +32,14 @@ def train(in_model_path, out_model_path, data_path=None,batch_size=32, epochs=1,
     :type lr: float
     """
     # Load data
+    attack = 'none'
+    malicious=False 
     x_train, y_train = load_data(data_path)
     x_train = np.array(x_train)
     y_train = np.array(y_train)
 
-    model = load_parameters(in_model_path)
-    print('in_model', in_model_path, 'out_model', out_model_path, 'data_path', data_path, 'batch_size', batch_size, 'epochs', epochs, 'malicious_flag', malicious_flag, 'attack_type', attack_type)
+    #model = load_parameters(in_model_path)
+    #print('in_model', in_model_path, 'out_model', out_model_path, 'data_path', data_path, 'batch_size', batch_size, 'epochs', epochs, 'malicious_flag', malicious_flag, 'attack_type', attack_type)
 
 
     if malicious:
@@ -143,7 +146,8 @@ def train(in_model_path, out_model_path, data_path=None,batch_size=32, epochs=1,
     with open(params_json_path, "w") as json_file:
         json.dump(params_json, json_file)
     
-    print('Train complete')
+    print('Train Completed!')
+    return metadata, model
 
 if __name__ == "__main__":
     """

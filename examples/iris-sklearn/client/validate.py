@@ -9,7 +9,7 @@ import json
 
 
 
-def validate(in_model_path, out_json_path, data_path=None, malicious=False, attack=None):
+def validate(model, out_json_path='/app/validation.json', data_path=None, malicious=False, attack=None):
     """ Validate model.
 
     :param in_model_path: The path to the input model.
@@ -28,7 +28,7 @@ def validate(in_model_path, out_json_path, data_path=None, malicious=False, atta
     y_test = pd.DataFrame(y_test)
 
     # Load model
-    model = load_parameters(in_model_path)
+    #model = load_parameters(in_model_path)
 
     # params_path = f"/var/parameters/{os.uname().nodename}"
     params_path = "parameters"
@@ -55,6 +55,7 @@ def validate(in_model_path, out_json_path, data_path=None, malicious=False, atta
     # Save JSON
     save_metrics(report, out_json_path)
     print("Validation complete.")
+    return report
 
 if __name__ == "__main__":
     # usage: python validate.py in_model_path out_json_path [data_path]

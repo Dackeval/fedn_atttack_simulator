@@ -36,5 +36,7 @@ RUN apt-get update \
 # Install everything from requirements.txt and the FEDn package
 RUN pip install --no-cache-dir -r requirements.txt
 
+COPY . /app
+
 WORKDIR /app
-ENTRYPOINT ["fedn"]
+ENTRYPOINT ["python", "/app/client/docker_client.py"]

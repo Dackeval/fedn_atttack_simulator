@@ -1,7 +1,10 @@
 import numpy as np
 from sklearn.linear_model import SGDClassifier
-import numpy as np
 from fedn.utils.helpers.helpers import get_helper, save_metadata, save_metrics
+import tempfile
+import os
+import io
+import collections
 
 HELPER_MODULE = 'numpyhelper'
 helper = get_helper(HELPER_MODULE)
@@ -30,6 +33,25 @@ def save_parameters(model, out_path):
 
     helper.save(parameters_np, out_path)
 
+def save_parameters_to_bytes(model):
+    parameters_np = np.concatenate((model.coef_, model.intercept_.reshape(-1, 1)), axis=1)
+
+    with tempfile.NamedTemporaryFile(suffix=".npz", delete=False) as tmpf:
+        temp_path = tmpf.name
+        helper.save(parameters_np, temp_path)
+        print('temp_path: ', temp_path)
+
+    with open(temp_path, "rb") as f:
+        data_bytes = f.read()
+    try:
+        os.remove(temp_path)
+    except OSError:
+        pass
+    
+    print('model saved to bytesio')
+
+    return io.BytesIO(data_bytes)
+
 
 def load_parameters(model_path):
     """ Load model parameters from file and populate model.
@@ -44,6 +66,27 @@ def load_parameters(model_path):
 
     model.coef_ = parameters_np[:, 0:4]
     model.intercept_ = parameters_np[:, -1]
+
+    return model
+
+def load_parameters_from_bytesio(buffer):
+    
+    with tempfile.NamedTemporaryFile(suffix=".npz", delete=False) as tmpf:
+        temp_path = tmpf.name
+        tmpf.write(buffer.getbuffer())
+        print('temp_path: ', temp_path)
+
+    model = compile_model()
+    parameters_np = np.array(helper.load(temp_path))
+
+    model.coef_ = parameters_np[:, 0:4]
+    model.intercept_ = parameters_np[:, -1]
+    print('model loaded from bytesio')
+
+    try:
+        os.remove(temp_path)
+    except OSError:
+        pass
 
     return model
 
