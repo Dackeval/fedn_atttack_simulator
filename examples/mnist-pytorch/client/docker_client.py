@@ -5,6 +5,8 @@ from train import train
 from validate import validate
 from model import load_parameters_from_bytesio, save_parameters_to_bytes
 import torch
+import random
+import string
 
 def get_api_url(api_url: str, api_port: int):
     url = f"{api_url}:{api_port}" if api_port else api_url
@@ -46,12 +48,18 @@ def on_predict(in_model):
 
 
 
+
+def generate_variable_name(length=8):
+    first_char = random.choice(string.ascii_letters + "_")  # First character: letter or underscore
+    other_chars = ''.join(random.choices(string.ascii_letters + string.digits + "_", k=length-1))  # Remaining characters
+    return first_char + other_chars
+
 def main(api_url: str, api_port: int, token: str = None):
     fedn_client = FednClient(train_callback=on_train, validate_callback=on_validate, predict_callback=on_predict)
 
     url = get_api_url(api_url, api_port)
 
-    name = input("Enter Client Name: ")
+    name = generate_variable_name()
     fedn_client.set_name(name)
 
     client_id = str(uuid.uuid4())

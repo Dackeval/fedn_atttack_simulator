@@ -16,16 +16,23 @@ def splitset(dataset, parts):
     return result
 
 
-def split(out_dir='data', n_splits=2):
-    # Make dir
-    if not os.path.exists(f'{out_dir}/clients'):
-        os.mkdir(f'{out_dir}/clients')
+def split(n_splits=2):
+    out_dir = './data'
+
+    # First, create `./data` if it doesn't exist
+    if not os.path.exists(out_dir):
+        os.mkdir(out_dir)
+
+    # Now create `./data/clients` if it doesn't exist
+    clients_dir = f'{out_dir}/clients'
+    if not os.path.exists(clients_dir):
+        os.mkdir(clients_dir)
 
     # Load and convert to dict
     train_data = torchvision.datasets.MNIST(
-        root=f'{out_dir}/train', transform=torchvision.transforms.ToTensor, train=True)
+        root=f'{out_dir}/train', transform=torchvision.transforms.ToTensor, train=True, download=True)
     test_data = torchvision.datasets.MNIST(
-        root=f'{out_dir}/test', transform=torchvision.transforms.ToTensor, train=False)
+        root=f'{out_dir}/test', transform=torchvision.transforms.ToTensor, train=False, download=True)
     data = {
         'x_train': splitset(train_data.data, n_splits),
         'y_train': splitset(train_data.targets, n_splits),
@@ -47,5 +54,5 @@ def split(out_dir='data', n_splits=2):
             f'{subdir}/mnist.pt')
 
 
-if __name__ == '__main__':
-    fire.Fire(split)
+# if __name__ == '__main__':
+#     fire.Fire(split)

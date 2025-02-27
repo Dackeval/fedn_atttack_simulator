@@ -1,65 +1,46 @@
 #!/bin/bash
 
-# Check if three arguments are provided
+# Usage: ./start_clients.sh <combiner_ip> <token> <benign_client_count> <malicious_client_count>
+
+# 1) Check we have exactly 4 arguments
 if [ "$#" -ne 4 ]; then
-    echo "Usage: $0 <combiner_ip> <benign_client_count> <malicious_client_count> <attack_type>"
+    echo "Usage: $0 <combiner_ip> <token> <benign_client_count> <malicious_client_count>"
     exit 1
 fi
 
-# Access the first argument
 combiner_ip="$1"
-benign_client_count="$2"
-malicious_client_count="$3"
-attack_type="$4"
+token="$2"
+benign_client_count="$3"
+malicious_client_count="$4"
 
-# Check if the provided values are integers
-if ! [[ "$benign_client_count" =~ ^[0-9]+$ ]]; then
-    echo "Error: The provided value for benign client count is not an integer."
-    exit 1
-fi
-
-if ! [[ "$malicious_client_count" =~ ^[0-9]+$ ]]; then
-    echo "Error: The provided value for malignant client count is not an integer."
-    exit 1
-fi
-
+# 2) Build Docker image
 docker build -t mnist-pytorch .
 
-source .mnist-pytorch/bin/activate && python3 bin/split_data --n_splits=$((benign_client_count + malicious_client_count))
-
-python3 bin/parameter_store create_parameter_store --ben_count=$((benign_client_count)) --mal_count=$((malicious_client_count))
-
-# Loop for count of clients if benign_client_count is greater than 0
+echo "Starting $benign_client_count benign client(s)."
 if [ "$benign_client_count" -gt 0 ]; then
     for i in $(seq 1 "$benign_client_count"); do
-        echo "Starting benign_client$i"
+        echo "Starting benign_client$i ..."
         docker run -d \
-        -v $PWD/client.yaml:/app/client.yaml \
-        -v $PWD/data/clients/$i:/var/data \
-        -v $PWD/parameter_store:/var/parameter_store \
-        -e ENTRYPOINT_OPTS="--data_path=/var/data/mnist.pt" \
-        --add-host=api-server:"$combiner_ip" \
-        --add-host=combiner:"$combiner_ip" \
-        --hostname=benign_client$i \
-        --name benign_client$i \
-        mnist-pytorch:latest fedn run client -in client.yaml --name benign_client$i
+            -e "CLIENT_INDEX=$i" \
+            -e "MALICIOUS=false" \
+            -v "$PWD/parameter_store:/var/parameter_store" \
+            mnist-pytorch:latest \
+            --api-url "$combiner_ip" \
+            --token "$token"
     done
 fi
 
-# Loop for count of clients if malicious_client_count is greater than 0
+echo "Starting $malicious_client_count malicious client(s)."
 if [ "$malicious_client_count" -gt 0 ]; then
     for i in $(seq 1 "$malicious_client_count"); do
-        client_number=$((benign_client_count + i))
-        echo "Starting malicious_client$i"
+        client_idx=$((benign_client_count + i))
+        echo "Starting malicious_client$i with CLIENT_INDEX=$client_idx ..."
         docker run -d \
-        -v $PWD/client.yaml:/app/client.yaml \
-        -v $PWD/data/clients/$client_number:/var/data \
-        -v $PWD/parameter_store:/var/parameter_store \
-        -e ENTRYPOINT_OPTS="--data_path=/var/data/mnist.pt --malicious=True --attack=$attack_type" \
-        --add-host=api-server:"$combiner_ip" \
-        --add-host=combiner:"$combiner_ip" \
-        --hostname=malicious_client$i \
-        --name malicious_client$i \
-        mnist-pytorch:latest fedn run client -in client.yaml --name malicious_client$i
+            -e "CLIENT_INDEX=$client_idx" \
+            -e "MALICIOUS=true" \
+            -v "$PWD/parameter_store:/var/parameter_store" \
+            mnist-pytorch:latest \
+            --api-url "$combiner_ip" \
+            --token "$token"
     done
 fi
