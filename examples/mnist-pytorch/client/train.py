@@ -53,7 +53,7 @@ def train(
     # Convert to boolean
     env_malicious = (env_malicious_flag == "true")
 
-
+    print(f"env_malicious_flag={env_malicious_flag}, env_malicious={env_malicious}")
     client_index_str = os.environ.get("CLIENT_INDEX")
     if client_index_str is None:
         # Default to 0 if none
@@ -62,6 +62,7 @@ def train(
     else:
         client_index = int(client_index_str)
 
+    print(f"client_index={client_index}")
 
     param_path = '/var/parameter_store/param_store.json'
     if os.path.isfile(param_path):
@@ -101,10 +102,11 @@ def train(
     if malicious:
         print('debug 2')
         match attack:
-            case 'grad_boost_basic':
+            #case 'grad_boost_basic':
                 ### Gradient inflation attack ###
                 # DO NOTHING IN THE DATA LOADING PROCESS
-                print("DO NOTHING IN THE DATA LOADING PROCESS")
+                #print("DO NOTHING IN THE DATA LOADING PROCESS")
+                
                 ### End of inflation attack code ###
             case 'label_flip_basic':
                 ### Label flipping attack - basic
@@ -222,9 +224,10 @@ def train(
                                     if param.grad is not None:
                                         param.grad *= inflation_factor
                                 ### End of inflation attack code ###
-                            case 'label_flip_basic':
+                            #case 'label_flip_basic':
                                 ### Label flipping attack - basic
-                                print("DO NOTHING IN THE TRAINING PROCESS")
+                                #print("DO NOTHING IN THE TRAINING PROCESS")
+                            #    continue
                                 ### End of label flipping attack - basic
                             case 'little_is_enough':
                                 print(f"The attack specified was LIE, but the model is not attacked in this round since the model count is {model_count}")
@@ -257,15 +260,15 @@ def train(
                     match attack:
                         case 'grad_boost_basic':
                             ### Gradient inflation attack ###
-                            inflation_factor = 100  # Can be adjusted
-                            print(f"An inflation factor of {inflation_factor} is applied on the parameters!")
+                            #inflation_factor = 100  # Can be adjusted
+                            #print(f"An inflation factor of {inflation_factor} is applied on the parameters!")
                             for param in model.parameters():
                                 if param.grad is not None:
                                     param.grad *= inflation_factor
                             ### End of inflation attack code ###
-                        case 'label_flip_basic':
+                        #case 'label_flip_basic':
                             ### Label flipping attack - basic
-                            print("DO NOTHING IN THE TRAINING PROCESS")
+                           # print("DO NOTHING IN THE TRAINING PROCESS")
                             ### End of label flipping attack - basic
                         case None:
                             print('No attack was specified for the malicious client.')

@@ -4,11 +4,16 @@ import sys
 from model import load_parameters, save_parameters
 import os
 import json
-from data import load_data
+from load__data import load_data
 from fedn.utils.helpers.helpers import get_helper, save_metadata, save_metrics
 
 HELPER_MODULE = 'numpyhelper'
 helper = get_helper(HELPER_MODULE)
+
+
+dir_path = os.path.dirname(os.path.realpath(__file__))
+sys.path.append(os.path.abspath(dir_path))
+
 
 def train(model, out_model_path='/app/model_update.npz',  
           data_path=None,batch_size=32, epochs=1, malicious=False, attack=None):
@@ -32,8 +37,55 @@ def train(model, out_model_path='/app/model_update.npz',
     :type lr: float
     """
     # Load data
-    attack = 'none'
-    malicious=False 
+    # Check if container sets MALICIOUS=true
+    env_malicious_flag = os.environ.get("MALICIOUS", "false").strip().lower()
+    # Convert to boolean
+    env_malicious = (env_malicious_flag == "true")
+
+    print(f"env_malicious_flag={env_malicious_flag}, env_malicious={env_malicious}")
+    client_index_str = os.environ.get("CLIENT_INDEX")
+    if client_index_str is None:
+        # Default to 0 if none
+        print("No CLIENT_INDEX found, defaulting to 0 (benign).")
+        client_index = 0
+    else:
+        client_index = int(client_index_str)
+
+    print(f"client_index={client_index}")
+
+    param_path = '/var/parameter_store/param_store.json'
+    if os.path.isfile(param_path):
+        with open(param_path, 'r') as f:
+            store = json.load(f)
+
+        client_conf = next(
+            (c for c in store.get("clients", []) if c["client_id"] == client_index),
+            None
+        )
+        if client_conf:
+            param_store_malicious = client_conf.get("is_malicious", False)
+            malicious = env_malicious or param_store_malicious
+            if malicious:
+                attack = client_conf.get("attack_type", "none")
+                inflation_factor = client_conf.get("inflation_factor", 1)
+            else:
+                attack = "none"
+                inflation_factor = 1
+
+            batch_size = store.get("batch_size", batch_size)
+            epochs     = store.get("epochs", epochs)
+
+        else:
+            print(f"No client entry found for client_id={client_index}. Using defaults.")
+
+            inflation_factor = 1
+    else:
+        print("No param_store.json found! Using all defaults.")
+        inflation_factor = 1
+
+    print(f"[TRAIN] client_index={client_index}, malicious={malicious}, attack={attack}")
+    print(f"[TRAIN] final hyperparams: epochs={epochs}, batch_size={batch_size}, inflation_factor={inflation_factor}")
+
     x_train, y_train = load_data(data_path)
     x_train = np.array(x_train)
     y_train = np.array(y_train)

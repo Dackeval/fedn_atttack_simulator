@@ -13,7 +13,6 @@ token="$2"
 benign_client_count="$3"
 malicious_client_count="$4"
 
-# 2) Build Docker image
 docker build -t mnist-pytorch .
 
 echo "Starting $benign_client_count benign client(s)."

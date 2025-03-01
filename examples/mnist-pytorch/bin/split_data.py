@@ -19,16 +19,13 @@ def splitset(dataset, parts):
 def split(n_splits=2):
     out_dir = './data'
 
-    # First, create `./data` if it doesn't exist
     if not os.path.exists(out_dir):
         os.mkdir(out_dir)
 
-    # Now create `./data/clients` if it doesn't exist
     clients_dir = f'{out_dir}/clients'
     if not os.path.exists(clients_dir):
         os.mkdir(clients_dir)
 
-    # Load and convert to dict
     train_data = torchvision.datasets.MNIST(
         root=f'{out_dir}/train', transform=torchvision.transforms.ToTensor, train=True, download=True)
     test_data = torchvision.datasets.MNIST(
@@ -40,7 +37,6 @@ def split(n_splits=2):
         'y_test': splitset(test_data.targets, n_splits),
     }
 
-    # Make splits
     for i in range(n_splits):
         subdir = f'{out_dir}/clients/{str(i+1)}'
         if not os.path.exists(subdir):

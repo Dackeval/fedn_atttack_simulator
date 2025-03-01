@@ -1,14 +1,13 @@
 {
     "ben_count": 2,
-    "mal_count": 1,
-    "attack_type": "little_is_enough",
+    "mal_count": 2,
+    "attack_type": "grad_boost_basic",
     "defence_type": "none",
     "host": "https://api.fedn.scaleoutsystems.com/simulatortest-fiq-fedn-reducer",
     "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQzMjY4MDMzLCJpYXQiOjE3NDA2NzYwMzMsImp0aSI6IjU0YTYwMzZjNGRiZDRhMzliNzMyOTM4NTNkMzg0Y2Y5IiwidXNlcl9pZCI6MTYxLCJjcmVhdG9yIjoiU2NhbGVvdXRpbnRlcm4iLCJyb2xlIjoiY2xpZW50IiwicHJvamVjdF9zbHVnIjoic2ltdWxhdG9ydGVzdC1maXEifQ.3R_kN2OHR-l3VdwabvwEqcpXWXDO4qTtradMwlrBmYw",
-    "lr": 0.01,
     "epochs": 1,
     "batch_size": 32,
-    "inflation_factor": 1,
+    "inflation_factor": 100,
     "clients": [
         {
             "client_id": 1,
@@ -21,8 +20,14 @@
         {
             "client_id": 3,
             "is_malicious": true,
-            "attack_type": "little_is_enough",
-            "inflation_factor": 1
+            "attack_type": "grad_boost_basic",
+            "inflation_factor": 100
+        },
+        {
+            "client_id": 4,
+            "is_malicious": true,
+            "attack_type": "grad_boost_basic",
+            "inflation_factor": 100
         }
     ]
 }

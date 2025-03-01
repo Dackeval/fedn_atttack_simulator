@@ -1,4 +1,4 @@
-from data import load_data
+from load__data import load_data
 from model import load_parameters, save_metrics
 from sklearn.metrics import log_loss, accuracy_score
 import os

@@ -47,8 +47,6 @@ def on_predict(in_model):
     return prediction
 
 
-
-
 def generate_variable_name(length=8):
     first_char = random.choice(string.ascii_letters + "_")  # First character: letter or underscore
     other_chars = ''.join(random.choices(string.ascii_letters + string.digits + "_", k=length-1))  # Remaining characters

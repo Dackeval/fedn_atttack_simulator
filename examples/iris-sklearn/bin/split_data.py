@@ -15,12 +15,15 @@ def splitset(dataset, parts):
     return result
 
 
-def split(out_dir='data', n_splits=2):
-    if not os.path.exists(f'{out_dir}'):
-        os.mkdir(f'{out_dir}')
-    # Make dir
-    if not os.path.exists(f'{out_dir}/clients'):
-        os.mkdir(f'{out_dir}/clients')
+def split(n_splits=2):
+    out_dir = './data'
+
+    if not os.path.exists(out_dir):
+        os.mkdir(out_dir)
+
+    clients_dir = f'{out_dir}/clients'
+    if not os.path.exists(clients_dir):
+        os.mkdir(clients_dir)
 
     with open("iris_data/iris.json", 'r') as json_file:
         data = json.load(json_file)
@@ -49,5 +52,5 @@ def split(out_dir='data', n_splits=2):
             json.dump(iris_data_dict, json_file)
 
 
-if __name__ == '__main__':
-    fire.Fire(split)
+# if __name__ == '__main__':
+#     fire.Fire(split)
