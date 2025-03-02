@@ -1,5 +1,5 @@
 {
-    "ben_count": 2,
+    "ben_count": 3,
     "mal_count": 2,
     "attack_type": "grad_boost_basic",
     "defence_type": "none",
@@ -7,7 +7,7 @@
     "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQzMjY4MDMzLCJpYXQiOjE3NDA2NzYwMzMsImp0aSI6IjU0YTYwMzZjNGRiZDRhMzliNzMyOTM4NTNkMzg0Y2Y5IiwidXNlcl9pZCI6MTYxLCJjcmVhdG9yIjoiU2NhbGVvdXRpbnRlcm4iLCJyb2xlIjoiY2xpZW50IiwicHJvamVjdF9zbHVnIjoic2ltdWxhdG9ydGVzdC1maXEifQ.3R_kN2OHR-l3VdwabvwEqcpXWXDO4qTtradMwlrBmYw",
     "epochs": 1,
     "batch_size": 32,
-    "inflation_factor": 100,
+    "inflation_factor": 10,
     "clients": [
         {
             "client_id": 1,
@@ -19,15 +19,19 @@
         },
         {
             "client_id": 3,
-            "is_malicious": true,
-            "attack_type": "grad_boost_basic",
-            "inflation_factor": 100
+            "is_malicious": false
         },
         {
             "client_id": 4,
             "is_malicious": true,
             "attack_type": "grad_boost_basic",
-            "inflation_factor": 100
+            "inflation_factor": 10
+        },
+        {
+            "client_id": 5,
+            "is_malicious": true,
+            "attack_type": "grad_boost_basic",
+            "inflation_factor": 10
         }
     ]
 }

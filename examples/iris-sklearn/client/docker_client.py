@@ -6,6 +6,10 @@ from validate import validate
 from model import load_parameters_from_bytesio, save_parameters_to_bytes
 import random
 import string
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("fedn")
 
 def get_api_url(api_url: str, api_port: int):
     url = f"{api_url}:{api_port}" if api_port else api_url
@@ -20,22 +24,24 @@ def generate_variable_name(length=8):
 
 
 def on_train(in_model_bytes, client_settings=None):
-
+    logger.info('in_model_bytes: %s', in_model_bytes)
+    logger.info('in_model type: %s', type(in_model_bytes))
+    
     in_model = load_parameters_from_bytesio(in_model_bytes)
 
-    print('in_model: ', in_model)
-    print('in_model: ', type(in_model))
+    logger.info('Loaded in_model: %s', in_model)
+    logger.info('Loaded in_model type: %s', type(in_model))
     metadata, out_model = train(in_model)
     metadata = {"training_metadata": metadata}
     out_model_bytesIO = save_parameters_to_bytes(out_model)
-    print('train sending out_model_bytesIO')
+    logger.info('train sending out_model_bytesIO')
     return out_model_bytesIO, metadata
 
 def on_validate(in_model_bytes):
 
-    print('In validate')
+    logger.info('Validating model')
     in_model = load_parameters_from_bytesio(in_model_bytes)
-    print('bytes-np converted')
+    logger.info('Validatin complete')
     metrics = validate(in_model)
 
     return metrics

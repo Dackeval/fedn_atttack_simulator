@@ -5,10 +5,9 @@ entry_points:
   build:
     command: python model.py
   startup:
-    command: python data.py
-  train:
-    command: python train.py
-  validate:
-    command: python validate.py
-  predict:
-    command: python predict.py
+    command: python load__data.py
+  # train:
+  #   command: python train.py
+  # validate:
+  #   command: python validate.py
+

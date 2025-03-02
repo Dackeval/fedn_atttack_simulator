@@ -6,10 +6,14 @@ import os
 import json
 from load__data import load_data
 from fedn.utils.helpers.helpers import get_helper, save_metadata, save_metrics
+import logging
 
 HELPER_MODULE = 'numpyhelper'
 helper = get_helper(HELPER_MODULE)
 
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("fedn")
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.abspath(dir_path))
@@ -42,16 +46,16 @@ def train(model, out_model_path='/app/model_update.npz',
     # Convert to boolean
     env_malicious = (env_malicious_flag == "true")
 
-    print(f"env_malicious_flag={env_malicious_flag}, env_malicious={env_malicious}")
+    logger.info(f"env_malicious_flag={env_malicious_flag}, env_malicious={env_malicious}")
     client_index_str = os.environ.get("CLIENT_INDEX")
     if client_index_str is None:
         # Default to 0 if none
-        print("No CLIENT_INDEX found, defaulting to 0 (benign).")
+        logger.warning("No CLIENT_INDEX found, defaulting to 0 (benign).")
         client_index = 0
     else:
         client_index = int(client_index_str)
 
-    print(f"client_index={client_index}")
+    logger.info(f"client_index={client_index}")
 
     param_path = '/var/parameter_store/param_store.json'
     if os.path.isfile(param_path):
@@ -76,45 +80,40 @@ def train(model, out_model_path='/app/model_update.npz',
             epochs     = store.get("epochs", epochs)
 
         else:
-            print(f"No client entry found for client_id={client_index}. Using defaults.")
-
+            logger.warning(f"No client entry found for client_id={client_index}. Using defaults.")
             inflation_factor = 1
     else:
-        print("No param_store.json found! Using all defaults.")
+        logger.warning("No param_store.json found! Using all defaults.")
         inflation_factor = 1
 
-    print(f"[TRAIN] client_index={client_index}, malicious={malicious}, attack={attack}")
-    print(f"[TRAIN] final hyperparams: epochs={epochs}, batch_size={batch_size}, inflation_factor={inflation_factor}")
+    logger.info(f"[TRAIN] client_index={client_index}, malicious={malicious}, attack={attack}")
+    logger.info(f"[TRAIN] hyperparams: epochs={epochs}, batch_size={batch_size}, inflation_factor={inflation_factor}")
 
     x_train, y_train = load_data(data_path)
     x_train = np.array(x_train)
     y_train = np.array(y_train)
 
-    #model = load_parameters(in_model_path)
-    #print('in_model', in_model_path, 'out_model', out_model_path, 'data_path', data_path, 'batch_size', batch_size, 'epochs', epochs, 'malicious_flag', malicious_flag, 'attack_type', attack_type)
-
 
     if malicious:
-        print(f"[DEBUG] Attack mode '{attack}' enabled.")
+        logger.info(f"[DEBUG] Attack mode '{attack}' enabled.")
         match attack:
             case 'grad_boost_basic':
-                print(f"[Attack] grad_boost_basic: Coefs before boost: {model.coef_}")
-                inflation_factor = 100
-                print(f"[Attack] A boost factor of {inflation_factor} is applied on the parameters!")
+                logger.info(f"[Attack] grad_boost_basic: Coefs before boost: {model.coef_}")
+                logger.info(f"[Attack] Applying boost factor {inflation_factor}")
                 model.coef_ = inflation_factor * model.coef_
                 model.intercept_ = inflation_factor * model.intercept_
-                print(f"[Attack] Coefs after boost: {model.coef_}")
-
+                logger.info(f"[Attack] Coefs after boost: {model.coef_}")
+            
             case 'label_flip_basic':
                 L = 3 # number of classes in IRIS
                 y_train = (L - 1 - y_train).tolist()  # convert back or keep as array
                 print("[Attack] Label flipping attack done.")
-
+            
             case None:
-                print("[Attack] Attack was set to None, ignoring.")
+                logger.info("[Attack] Attack was set to None, ignoring.")
 
             case _:
-                print(f"[Attack] Unrecognized attack: {attack}")
+                logger.warning(f"[Attack] Unrecognized attack: {attack}")
 
 
     x_train_df = pd.DataFrame(x_train)
@@ -155,13 +154,13 @@ def train(model, out_model_path='/app/model_update.npz',
 
             start_idx += batch_size
 
-        print(f"[Epoch {e+1}/{epochs}] partial_fit complete.")
+        logger.info(f"[Epoch {e+1}/{epochs}] partial_fit complete.")
 
     # Metadata needed for aggregation server side
     metadata = {
         # num_examples are mandatory
         'num_examples': len(x_train),
-        'epochs': model.get_params()['max_iter']
+        'epochs': epochs
     }
 
     # Save JSON metadata file (mandatory)
@@ -198,7 +197,7 @@ def train(model, out_model_path='/app/model_update.npz',
     with open(params_json_path, "w") as json_file:
         json.dump(params_json, json_file)
     
-    print('Train Completed!')
+    logger.info('Train Completed!')
     return metadata, model
 
 if __name__ == "__main__":

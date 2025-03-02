@@ -6,6 +6,10 @@ import sys
 import pandas as pd
 import numpy as np
 import json
+import logging
+
+logger = logging.getLogger("fedn")
+logging.basicConfig(level=logging.INFO)
 
 
 
@@ -44,17 +48,30 @@ def validate(model, out_json_path='/app/validation.json', data_path=None, malici
     with open(f"{params_path}/params.json", "w") as json_file:
         json.dump(params_json, json_file)
 
-   # JSON schema
+    eps = 1e-15  # numerical instability
+
+    train_proba = model.predict_proba(x_train)
+    train_proba = np.clip(train_proba, eps, 1 - eps)  # ensures values are in valid range
+    train_proba /= train_proba.sum(axis=1, keepdims=True)
+
+    test_proba = model.predict_proba(x_test)
+    test_proba = np.clip(test_proba, eps, 1 - eps)
+    test_proba /= test_proba.sum(axis=1, keepdims=True)
+
     report = {
-        "training_loss": log_loss(y_train, np.nan_to_num(model.predict_proba(x_train), 1), labels=[0, 1, 2]),
-        "training_accuracy": accuracy_score(y_train, np.nan_to_num(model.predict(x_train),0)),
-        "test_loss": log_loss(y_test, np.nan_to_num(model.predict_proba(x_test), 1), labels=[0, 1, 2]),
-        "test_accuracy": accuracy_score(y_test, np.nan_to_num(model.predict(x_test), 0))
+        "training_loss": log_loss(y_train, train_proba, labels=[0, 1, 2]),
+        "training_accuracy": accuracy_score(y_train, model.predict(x_train)),
+        "test_loss": log_loss(y_test, test_proba, labels=[0, 1, 2]),
+        "test_accuracy": accuracy_score(y_test, model.predict(x_test))
     }
 
-    # Save JSON
+    logger.info('Training accuracy: %.4f', accuracy_score(y_train, model.predict(x_train)))
+    logger.info('Training loss: %.4f', log_loss(y_train, train_proba, labels=[0, 1, 2]))
+    logger.info('Test accuracy: %.4f', accuracy_score(y_test, model.predict(x_test)))
+    logger.info('Test loss: %.4f', log_loss(y_test, test_proba, labels=[0, 1, 2]))   
+
     save_metrics(report, out_json_path)
-    print("Validation complete.")
+    logger.info('Validation Completed!')
     return report
 
 if __name__ == "__main__":

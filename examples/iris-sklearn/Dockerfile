@@ -39,4 +39,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . /app
 
 WORKDIR /app
-ENTRYPOINT ["python", "/app/client/docker_client.py"]
+ENTRYPOINT ["python", "-u", "/app/client/docker_client.py"]
