@@ -161,6 +161,7 @@ ps.create_parameter_store(BENIGN_CLIENTS, MALICIOUS_CLIENTS, ATTACK_TYPE, DEFENS
 # ------------------------------
 # SPLIT DATA
 total_clients = BENIGN_CLIENTS + MALICIOUS_CLIENTS
+print(f"Splitting data for {total_clients} clients")
 sd(total_clients)
 # ------------------------------
 

@@ -16,7 +16,7 @@ def compile_model():
     :rtype: sklearn.linear_model._logistic.LogisticRegression
     """
 
-    model = SGDClassifier(warm_start=True, loss='log_loss', max_iter=20, learning_rate='invscaling', eta0=0.001, random_state=100)
+    model = SGDClassifier(warm_start=True, loss='log_loss', max_iter=1, learning_rate='invscaling', eta0=0.001, random_state=100)
     model.fit([[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]], [0, 1, 2])
 
     return model

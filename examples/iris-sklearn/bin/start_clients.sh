@@ -24,6 +24,7 @@ if [ "$benign_client_count" -gt 0 ]; then
             -e "CLIENT_INDEX=$i" \
             -e "MALICIOUS=false" \
             -v "$PWD/parameter_store:/var/parameter_store" \
+            -v "$PWD/data:/app/data" \
             iris-sklearn:latest \
             --api-url "$combiner_ip" \
             --token "$token"
@@ -39,6 +40,7 @@ if [ "$malicious_client_count" -gt 0 ]; then
             -e "CLIENT_INDEX=$client_idx" \
             -e "MALICIOUS=true" \
             -v "$PWD/parameter_store:/var/parameter_store" \
+            -v "$PWD/data:/app/data" \
             iris-sklearn:latest \
             --api-url "$combiner_ip" \
             --token "$token"

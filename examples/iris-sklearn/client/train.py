@@ -8,6 +8,8 @@ from load__data import load_data
 from fedn.utils.helpers.helpers import get_helper, save_metadata, save_metrics
 import logging
 
+
+
 HELPER_MODULE = 'numpyhelper'
 helper = get_helper(HELPER_MODULE)
 
@@ -40,6 +42,9 @@ def train(model, out_model_path='/app/model_update.npz',
     :param lr: The learning rate to use.
     :type lr: float
     """
+    client_index = os.environ.get("CLIENT_INDEX", "1")
+    out_model_path = f"/app/model_update_{client_index}.npz"
+    logger.info(f"out_model_path={out_model_path}")
     # Load data
     # Check if container sets MALICIOUS=true
     env_malicious_flag = os.environ.get("MALICIOUS", "false").strip().lower()
@@ -156,11 +161,13 @@ def train(model, out_model_path='/app/model_update.npz',
 
         logger.info(f"[Epoch {e+1}/{epochs}] partial_fit complete.")
 
+
+
     # Metadata needed for aggregation server side
     metadata = {
         # num_examples are mandatory
         'num_examples': len(x_train),
-        'epochs': epochs
+        'epochs': epochs,
     }
 
     # Save JSON metadata file (mandatory)
@@ -170,7 +177,7 @@ def train(model, out_model_path='/app/model_update.npz',
     save_parameters(model, out_model_path)
 
     # #params_path = f"/var/parameters/{os.uname().nodename}"
-    params_path = "parameters"
+    params_path = "paramaters"
     if not os.path.exists(params_path):
         os.makedirs(params_path)
 
@@ -193,7 +200,6 @@ def train(model, out_model_path='/app/model_update.npz',
             "global_params": []
         }
 
-    # Now write the file (in either case)
     with open(params_json_path, "w") as json_file:
         json.dump(params_json, json_file)
     

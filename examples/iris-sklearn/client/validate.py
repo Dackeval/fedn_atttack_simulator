@@ -31,6 +31,7 @@ def validate(model, out_json_path='/app/validation.json', data_path=None, malici
     x_test = pd.DataFrame(x_test)
     y_test = pd.DataFrame(y_test)
 
+# ----------------- Maybe not needed?  -----------------
     # Load model
     #model = load_parameters(in_model_path)
 
@@ -47,16 +48,26 @@ def validate(model, out_json_path='/app/validation.json', data_path=None, malici
 
     with open(f"{params_path}/params.json", "w") as json_file:
         json.dump(params_json, json_file)
+# ----------------------------------
+    client_index = os.environ.get("CLIENT_INDEX", "1")
+    model = load_parameters(f"/app/model_update_{client_index}.npz")
+    logger.info(f"/app/model_update_{client_index}.npz")
+
 
     eps = 1e-15  # numerical instability
-
     train_proba = model.predict_proba(x_train)
-    train_proba = np.clip(train_proba, eps, 1 - eps)  # ensures values are in valid range
-    train_proba /= train_proba.sum(axis=1, keepdims=True)
+    train_proba = np.clip(train_proba, eps, 1 - eps)
+
+    row_sums = train_proba.sum(axis=1, keepdims=True)
+    row_sums[row_sums == 0] = eps
+    train_proba /= row_sums
+
 
     test_proba = model.predict_proba(x_test)
     test_proba = np.clip(test_proba, eps, 1 - eps)
-    test_proba /= test_proba.sum(axis=1, keepdims=True)
+    row_sums = test_proba.sum(axis=1, keepdims=True)
+    row_sums[row_sums == 0] = eps
+    test_proba /= row_sums
 
     report = {
         "training_loss": log_loss(y_train, train_proba, labels=[0, 1, 2]),

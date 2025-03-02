@@ -50,7 +50,7 @@ def split(n_splits=2):
             
         with open(f'{subdir}/iris.json', "w") as json_file:
             json.dump(iris_data_dict, json_file)
-
+        print('Split data saved to:', subdir)
 
 # if __name__ == '__main__':
 #     fire.Fire(split)

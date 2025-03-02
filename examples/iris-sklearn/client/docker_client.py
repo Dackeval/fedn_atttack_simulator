@@ -22,7 +22,6 @@ def generate_variable_name(length=8):
     other_chars = ''.join(random.choices(string.ascii_letters + string.digits + "_", k=length-1))  # Remaining characters
     return first_char + other_chars
 
-
 def on_train(in_model_bytes, client_settings=None):
     logger.info('in_model_bytes: %s', in_model_bytes)
     logger.info('in_model type: %s', type(in_model_bytes))
@@ -53,7 +52,6 @@ def on_predict(in_model):
         "confidence": 0.9,
     }
     return prediction
-
 
 def main(api_url: str, api_port: int, token: str = None):
     fedn_client = FednClient(train_callback=on_train, validate_callback=on_validate, predict_callback=on_predict)

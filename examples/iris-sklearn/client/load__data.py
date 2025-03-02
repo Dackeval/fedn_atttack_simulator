@@ -14,9 +14,12 @@ def _get_data_path():
     # client = docker.from_env()
     # container = client.containers.get(os.environ['HOSTNAME'])
     # number = container.name[-1]
-    number = 1 
-    # Return data path
-    return "/app/client/data/clients/1/iris.json"
+    # number = 1 
+    # # Return data path
+    # return "/app/client/data/clients/1/iris.json"
+    client_index = os.environ.get("CLIENT_INDEX", "1")
+    return f"/app/data/clients/{client_index}/iris.json"
+
 
 def load_data(data_path, is_train=True):
     """ Load data from disk.
