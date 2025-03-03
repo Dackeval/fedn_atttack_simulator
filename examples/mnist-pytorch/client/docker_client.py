@@ -7,6 +7,10 @@ from model import load_parameters_from_bytesio, save_parameters_to_bytes
 import torch
 import random
 import string
+import logging
+
+logger = logging.getLogger("fedn")
+logging.basicConfig(level=logging.INFO)
 
 def get_api_url(api_url: str, api_port: int):
     url = f"{api_url}:{api_port}" if api_port else api_url
@@ -21,19 +25,19 @@ def on_train(in_model_bytes, client_settings=None):
 
     in_model = load_parameters_from_bytesio(in_model_bytes)
 
-    print('in_model: ', in_model)
-    print('in_model: ', type(in_model))
+    logger.info(f'in_model: {in_model}')
+    logger.info(f'in_model type: {type(in_model)}')
     metadata, out_model = train(in_model)
-    metadata = {"training_metadata": metadata}
+    metadata = {f'training_metadata': metadata}
     out_model_bytesIO = save_parameters_to_bytes(out_model)
-    print('train sending out_model_bytesIO')
+    logger.info('train sending out_model_bytesIO')
     return out_model_bytesIO, metadata
 
 def on_validate(in_model_bytes):
 
-    print('In validate')
+    logger.info('In validate')
     in_model = load_parameters_from_bytesio(in_model_bytes)
-    print('bytes-np converted')
+    logger.info('bytes-np converted')
     metrics = validate(in_model)
 
     return metrics
@@ -73,7 +77,7 @@ def main(api_url: str, api_port: int, token: str = None):
     result, combiner_config = fedn_client.connect_to_api(url, token, controller_config)
 
     if result != ConnectToApiResult.Assigned:
-        print("Failed to connect to API, exiting.")
+        logger.info("Failed to connect to API, exiting.")
         return
 
     result: bool = fedn_client.init_grpchandler(config=combiner_config, client_name=client_id, token=token)

@@ -1,7 +1,7 @@
 # data.py
 import os
 import torch
-import docker
+
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 abs_path = os.path.abspath(dir_path)
@@ -18,7 +18,9 @@ def _get_data_path():
     # return f"/Users/sigvard/Desktop/fedn_attack_simulator/examples/mnist-pytorch/client/data/clients/1/mnist.pt"    
    
     # # # for local docker testing
-    return "/app/client/data/clients/1/mnist.pt"
+    # return "/app/client/data/clients/1/mnist.pt"
+    client_index = os.environ.get("CLIENT_INDEX", "1")
+    return f"/app/data/clients/{client_index}/mnist.pt"
 
     
 def load_data(data_path, is_train=True):

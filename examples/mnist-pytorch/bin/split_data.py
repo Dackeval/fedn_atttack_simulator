@@ -48,6 +48,8 @@ def split(n_splits=2):
             'y_test': data['y_test'][i],
         },
             f'{subdir}/mnist.pt')
+        print('Split data saved to:', subdir)
+
 
 
 # if __name__ == '__main__':

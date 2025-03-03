@@ -6,7 +6,10 @@ import numpy
 import tempfile
 import os
 import io
+import logging
 
+logger = logging.getLogger("fedn")
+logging.basicConfig(level=logging.INFO)
 
 HELPER_MODULE = "numpyhelper"
 helper = get_helper(HELPER_MODULE)
@@ -27,7 +30,7 @@ def compile_model():
             x = torch.nn.functional.relu(self.fc1(x.reshape(x.size(0), 784)))
             x = torch.nn.functional.dropout(x, p=0.5, training=self.training)
             x = torch.nn.functional.relu(self.fc2(x))
-            x = torch.nn.functional.log_softmax(self.fc3(x), dim=1)
+            x = self.fc3(x) # switched to CrossEntropyLoss for numerical stability from log_softmax
             return x
 
     return Net()
@@ -68,8 +71,7 @@ def save_parameters_to_bytes(model):
     with tempfile.NamedTemporaryFile(suffix=".npz", delete=False) as tmpf:
         temp_path = tmpf.name
         helper.save(parameters_np, temp_path)
-        print('temp_path: ', temp_path)
-
+        logger.info(f'temp_path: {temp_path}')
     with open(temp_path, "rb") as f:
         data_bytes = f.read()
     try:
@@ -77,7 +79,7 @@ def save_parameters_to_bytes(model):
     except OSError:
         pass
     
-    print('model saved to bytesio')
+    logger.info('model saved to bytesio')
 
     return io.BytesIO(data_bytes)
 
@@ -86,15 +88,15 @@ def load_parameters_from_bytesio(buffer):
     with tempfile.NamedTemporaryFile(suffix=".npz", delete=False) as tmpf:
         temp_path = tmpf.name
         tmpf.write(buffer.getbuffer())
-        print('temp_path: ', temp_path)
-
+        logger.info(f'temp_path: {temp_path}')
+        
     model = compile_model()
     parameters_np = helper.load(temp_path)
     params_dict = zip(model.state_dict().keys(), parameters_np)
     state_dict = collections.OrderedDict({key: torch.tensor(x) for key, x in params_dict})
     model.load_state_dict(state_dict, strict=True)
 
-    print('model loaded from bytesio')
+    logger.info('model loaded from bytesio')
 
     try:
         os.remove(temp_path)
