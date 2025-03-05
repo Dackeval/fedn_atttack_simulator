@@ -4,11 +4,10 @@ import math
 import torch
 import collections
 import json
-
+import logging
 from fedn.utils.helpers.helpers import save_metadata, get_helper
 from data import load_data
 from model import load_parameters, save_parameters, compile_model
-import logging
 
 logger = logging.getLogger("fedn")
 logging.basicConfig(level=logging.INFO)
@@ -51,16 +50,16 @@ def train(
 
     x_train, y_train = load_data(data_path)
 
-    client_index = os.environ.get("CLIENT_INDEX", "1")
-    out_model_path = f"/app/model_update_{client_index}.npz"
+    # set out model path based on client index
+    client_index_str = os.environ.get("CLIENT_INDEX", "1")
+    out_model_path = f"/app/model_update_{client_index_str}.npz"
+    param_path = '/var/parameter_store/param_store.json'
 
-    # Check if container sets MALICIOUS=true
+    # Check if container sets MALICIOUS=true and print 
     env_malicious_flag = os.environ.get("MALICIOUS", "false").strip().lower()
-    # Convert to boolean
     env_malicious = (env_malicious_flag == "true")
+    logger.info(f"env_malicious_flag={env_malicious_flag}, env_malicious={env_malicious}, client_index={client_index_str}" )
 
-    logger.info(f"env_malicious_flag={env_malicious_flag}, env_malicious={env_malicious}")
-    client_index_str = os.environ.get("CLIENT_INDEX")
     if client_index_str is None:
         # Default to 0 if none
         logger.warning("No CLIENT_INDEX found, defaulting to 0 (benign).")
@@ -68,17 +67,15 @@ def train(
     else:
         client_index = int(client_index_str)
 
-    logger.info(f"client_index={client_index}")
-
-    param_path = '/var/parameter_store/param_store.json'
     if os.path.isfile(param_path):
         with open(param_path, 'r') as f:
             store = json.load(f)
-
+        # Find the right client in the store
         client_conf = next(
             (c for c in store.get("clients", []) if c["client_id"] == client_index),
             None
         )
+        # load parameters 
         if client_conf:
             param_store_malicious = client_conf.get("is_malicious", False)
             malicious = env_malicious or param_store_malicious
@@ -89,38 +86,32 @@ def train(
                 attack = "none"
                 inflation_factor = 1
 
+            # Load other params
             batch_size = store.get("batch_size", batch_size)
             epochs     = store.get("epochs", epochs)
             lr         = store.get("lr", lr)
 
         else:
             logger.warning(f"No client entry found for client_id={client_index}. Using defaults.")
-
             inflation_factor = 1
     else:
         logger.warning("No param_store.json found! Using all defaults.")
         inflation_factor = 1
 
+    # Print for debugging
     logger.info(f"[TRAIN] client_index={client_index}, malicious={malicious}, attack={attack}")
     logger.info(f"[TRAIN] final hyperparams: epochs={epochs}, batch_size={batch_size}, lr={lr}, inflation_factor={inflation_factor}")
 
     # Implement different version of training for malicious clients
     if malicious:
-        logger.info('debug 2')
         match attack:
             #case 'grad_boost_basic':
-                ### Gradient inflation attack ###
                 # DO NOTHING IN THE DATA LOADING PROCESS
-                #print("DO NOTHING IN THE DATA LOADING PROCESS")
-                
-                ### End of inflation attack code ###
             case 'label_flip_basic':
                 ### Label flipping attack - basic
-                y_train_unflipped = y_train
                 L = len(set([value.item() for value in y_train]))
                 y_train = torch.tensor([L - 1 - y for y in y_train])
-                logger.info('Running a label flip :D')
-                ### End of label flipping attack - basic
+                logger.info('Running a label flip.')
             case 'backdoor_35int':
                 # Implementation of the backdoor attack
                 target_label = 8 # Label which we try to misclassify as the backdoor label
@@ -130,11 +121,13 @@ def train(
                 for index, is_target in enumerate((y_train == target_label).tolist()):
                     if is_target:
                         # Backdoor intensity is defined here
-                        x_train[index][1] = torch.tensor([0.9922 for x in range(28)])
+                        # modify the second row, ie. index 1, to have an pixel intensity close to 1, ie white, across all 28 pixels.
+                        x_train[index][1] = torch.tensor([0.9922 for x in range(28)]) 
 
-                prop_counter = 0
-                bd_prop = 0.2
+                prop_counter = 0 
+                bd_prop = 0.2 # backdoor probability for other labels
 
+                # Add backdoor with probability of adding bd_prop to all other labels.
                 for backdoor_label in range(10):
                     for index, is_target in enumerate((y_train == backdoor_label).tolist()):
                         if is_target:
@@ -146,15 +139,17 @@ def train(
                                     prop_counter += 1
                                 else:
                                     prop_counter = 0
+
             case 'artificial_backdoor_05p':
                 backdoor_label = 8
                 intensity = 1
-                print(f"Adding a backdoor trigger to label {backdoor_label}")
+                logger.info(f"Adding a backdoor trigger to label {backdoor_label}")
                 for index, is_target in enumerate((y_train == backdoor_label).tolist()):
                     if is_target:
                         x_train[index][2] = torch.tensor([intensity if (x > 4 and x <= 5) else 0 for x in range(28)])
                         x_train[index][3] = torch.tensor([intensity if (x > 3 and x <= 6) else 0 for x in range(28)])
                         x_train[index][4] = torch.tensor([intensity if (x > 4 and x <= 5) else 0 for x in range(28)])
+
             case 'artificial_backdoor_05p_center':
                 backdoor_label = 8
                 logger.info(f"Adding a backdoor trigger to label {backdoor_label}")
@@ -165,6 +160,7 @@ def train(
                         x_train[index][7][8] = 1
                         x_train[index][7][9] = 1
                         x_train[index][8][8] = 1
+
             case None:
                 if attack == 'little_is_enough':
                     logger.info('LIE attack')
@@ -172,9 +168,6 @@ def train(
                     logger.warning('No attack was specified for the malicious client.')
             case _:
                 logger.info("DO NOTHING!")
-
-    # Load parmeters and initialize model
-    #model = load_parameters(in_model_path)
 
     if attack == 'little_is_enough':
         logger.info("This client is running a LIE attack!")
@@ -213,34 +206,14 @@ def train(
                     # Retrieve current batch
                     batch_x = x_train[b * batch_size:(b + 1) * batch_size]
                     batch_y = y_train[b * batch_size:(b + 1) * batch_size]
+
                     # Train on batch
                     optimizer.zero_grad()
                     outputs = model(batch_x)
                     loss = criterion(outputs, batch_y)
                     loss.backward()
-
-                    # Implement different version of training for malicious clients
-                    if malicious:
-                        match attack:
-                            case 'grad_boost_basic':
-                                ### Gradient inflation attack ###
-                                logger.info(f"An inflation factor of {inflation_factor} is applied on the parameters!")
-                                for param in model.parameters():
-                                    if param.grad is not None:
-                                        param.grad *= inflation_factor
-                                ### End of inflation attack code ###
-                            #case 'label_flip_basic':
-                                ### Label flipping attack - basic
-                                #print("DO NOTHING IN THE TRAINING PROCESS")
-                            #    continue
-                                ### End of label flipping attack - basic
-                            case 'little_is_enough':
-                                logger.info(f"The attack specified was LIE, but the model is not attacked in this round since the model count is {model_count}")
-                            case None:
-                                logger.info('No attack was specified for the malicious client.')
-                                
                     optimizer.step()
-                    # Log
+                    # log/print loss
                     if b % 100 == 0:
                         logger.info(
                             f"Epoch {e}/{epochs-1} | Batch: {b}/{n_batches-1} | Loss: {loss.item()}")
@@ -264,29 +237,18 @@ def train(
                 if malicious:
                     match attack:
                         case 'grad_boost_basic':
-                            ### Gradient inflation attack ###
-                            #inflation_factor = 100  # Can be adjusted
-                            #print(f"An inflation factor of {inflation_factor} is applied on the parameters!")
                             for param in model.parameters():
                                 if param.grad is not None:
                                     param.grad *= inflation_factor
-                            ### End of inflation attack code ###
-                        #case 'label_flip_basic':
-                            ### Label flipping attack - basic
-                           # print("DO NOTHING IN THE TRAINING PROCESS")
-                            ### End of label flipping attack - basic
-                        case None:
-                            logger.warning('No attack was specified for the malicious client.')
                             
                 optimizer.step()
-                # Log
+                # log/print loss
                 if b % 100 == 0:
                     logger.info(
                         f"Epoch {e}/{epochs-1} | Batch: {b}/{n_batches-1} | Loss: {loss.item()}")
 
     # Metadata needed for aggregation server side
     metadata = {
-        # num_examples are mandatory
         'num_examples': len(x_train),
         'batch_size': batch_size,
         'epochs': epochs,
@@ -301,7 +263,6 @@ def train(
 
     logger.info('Train Completed!')
     return metadata, model
-
 
 
 if __name__ == "__main__":

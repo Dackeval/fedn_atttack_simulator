@@ -2,7 +2,7 @@
 
 # Usage: ./start_clients.sh <combiner_ip> <token> <benign_client_count> <malicious_client_count>
 
-# 1) Check we have exactly 4 arguments
+# Check we have exactly 4 arguments
 if [ "$#" -ne 4 ]; then
     echo "Usage: $0 <combiner_ip> <token> <benign_client_count> <malicious_client_count>"
     exit 1

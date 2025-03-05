@@ -1,7 +1,6 @@
 #!./.mnist-pytorch/bin/python
 import os
 from math import floor
-
 import fire
 import torch
 import torchvision
@@ -50,7 +49,3 @@ def split(n_splits=2):
             f'{subdir}/mnist.pt')
         print('Split data saved to:', subdir)
 
-
-
-# if __name__ == '__main__':
-#     fire.Fire(split)

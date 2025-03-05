@@ -5,6 +5,10 @@ import tempfile
 import os
 import io
 import collections
+import logging
+
+logger = logging.getLogger("fedn")
+logging.basicConfig(level=logging.INFO)
 
 HELPER_MODULE = 'numpyhelper'
 helper = get_helper(HELPER_MODULE)
@@ -16,7 +20,7 @@ def compile_model():
     :rtype: sklearn.linear_model._logistic.LogisticRegression
     """
 
-    model = SGDClassifier(warm_start=True, loss='log_loss', max_iter=1, learning_rate='invscaling', eta0=0.001, random_state=100)
+    model = SGDClassifier(warm_start=True, loss='log_loss', max_iter=20, learning_rate='invscaling', eta0=0.001, random_state=100)
     model.fit([[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]], [0, 1, 2])
 
     return model
@@ -39,7 +43,6 @@ def save_parameters_to_bytes(model):
     with tempfile.NamedTemporaryFile(suffix=".npz", delete=False) as tmpf:
         temp_path = tmpf.name
         helper.save(parameters_np, temp_path)
-        print('temp_path: ', temp_path)
 
     with open(temp_path, "rb") as f:
         data_bytes = f.read()
@@ -48,7 +51,7 @@ def save_parameters_to_bytes(model):
     except OSError:
         pass
     
-    print('model saved to bytesio')
+    logger.info('model saved to bytesio')
 
     return io.BytesIO(data_bytes)
 
@@ -74,14 +77,13 @@ def load_parameters_from_bytesio(buffer):
     with tempfile.NamedTemporaryFile(suffix=".npz", delete=False) as tmpf:
         temp_path = tmpf.name
         tmpf.write(buffer.getbuffer())
-        print('temp_path: ', temp_path)
 
     model = compile_model()
     parameters_np = np.array(helper.load(temp_path))
 
     model.coef_ = parameters_np[:, 0:4]
     model.intercept_ = parameters_np[:, -1]
-    print('model loaded from bytesio')
+    logger.info('model loaded from bytesio')
 
     try:
         os.remove(temp_path)
@@ -104,4 +106,4 @@ def init_seed(out_path='seed.npz'):
 
 if __name__ == "__main__":
 
-    init_seed("../seed.npz")
+    init_seed("./seed.npz")

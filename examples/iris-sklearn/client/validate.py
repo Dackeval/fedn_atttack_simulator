@@ -11,9 +11,7 @@ import logging
 logger = logging.getLogger("fedn")
 logging.basicConfig(level=logging.INFO)
 
-
-
-def validate(model, out_json_path='/app/validation.json', data_path=None, malicious=False, attack=None):
+def validate(global_model, out_json_path='/app/validation.json', data_path=None, malicious=False, attack=None):
     """ Validate model.
 
     :param in_model_path: The path to the input model.
@@ -31,31 +29,14 @@ def validate(model, out_json_path='/app/validation.json', data_path=None, malici
     x_test = pd.DataFrame(x_test)
     y_test = pd.DataFrame(y_test)
 
-# ----------------- Maybe not needed?  -----------------
-    # Load model
-    #model = load_parameters(in_model_path)
-
-    # params_path = f"/var/parameters/{os.uname().nodename}"
-    params_path = "parameters"
-    if not os.path.exists(params_path):
-        os.makedirs(params_path)
-
-    params_json_path = os.path.join(params_path, "params.json")
-
-    with open(f"{params_path}/params.json", "r") as json_file:
-        params_json = json.load(json_file)
-        params_json['global_params'].append(np.concatenate((model.coef_, model.intercept_.reshape(-1, 1)), axis=1).tolist())
-
-    with open(f"{params_path}/params.json", "w") as json_file:
-        json.dump(params_json, json_file)
-# ----------------------------------
+    # load the local model for train acc and loss
     client_index = os.environ.get("CLIENT_INDEX", "1")
-    model = load_parameters(f"/app/model_update_{client_index}.npz")
+    local_model = load_parameters(f"/app/model_update_{client_index}.npz")
     logger.info(f"/app/model_update_{client_index}.npz")
 
 
     eps = 1e-15  # numerical instability
-    train_proba = model.predict_proba(x_train)
+    train_proba = local_model.predict_proba(x_train)
     train_proba = np.clip(train_proba, eps, 1 - eps)
 
     row_sums = train_proba.sum(axis=1, keepdims=True)
@@ -63,7 +44,7 @@ def validate(model, out_json_path='/app/validation.json', data_path=None, malici
     train_proba /= row_sums
 
 
-    test_proba = model.predict_proba(x_test)
+    test_proba = global_model.predict_proba(x_test)
     test_proba = np.clip(test_proba, eps, 1 - eps)
     row_sums = test_proba.sum(axis=1, keepdims=True)
     row_sums[row_sums == 0] = eps
@@ -71,14 +52,14 @@ def validate(model, out_json_path='/app/validation.json', data_path=None, malici
 
     report = {
         "training_loss": log_loss(y_train, train_proba, labels=[0, 1, 2]),
-        "training_accuracy": accuracy_score(y_train, model.predict(x_train)),
+        "training_accuracy": accuracy_score(y_train, local_model.predict(x_train)),
         "test_loss": log_loss(y_test, test_proba, labels=[0, 1, 2]),
-        "test_accuracy": accuracy_score(y_test, model.predict(x_test))
+        "test_accuracy": accuracy_score(y_test, global_model.predict(x_test))
     }
 
-    logger.info('Training accuracy: %.4f', accuracy_score(y_train, model.predict(x_train)))
+    logger.info('Training accuracy: %.4f', accuracy_score(y_train, local_model.predict(x_train)))
     logger.info('Training loss: %.4f', log_loss(y_train, train_proba, labels=[0, 1, 2]))
-    logger.info('Test accuracy: %.4f', accuracy_score(y_test, model.predict(x_test)))
+    logger.info('Test accuracy: %.4f', accuracy_score(y_test, global_model.predict(x_test)))
     logger.info('Test loss: %.4f', log_loss(y_test, test_proba, labels=[0, 1, 2]))   
 
     save_metrics(report, out_json_path)

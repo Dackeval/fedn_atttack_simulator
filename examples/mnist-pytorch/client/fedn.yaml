@@ -1,4 +1,4 @@
-# Remove the python_env tag below to handle the environment manually
+# only run build and startup through fedn.yaml. Train and Validate through docker_client.py
 python_env: python_env.yaml 
 
 entry_points:
@@ -6,13 +6,6 @@ entry_points:
     command: python model.py
   startup:
     command: python data.py
-  # train:
-  #   command: python train.py
-  # validate:
-  #   command: python validate.py
-  # predict:
-  #   command: python predict.py
-  # client:
-  #   command: python client.py
+
 
 

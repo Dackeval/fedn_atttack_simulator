@@ -8,11 +8,8 @@ from load__data import load_data
 from fedn.utils.helpers.helpers import get_helper, save_metadata, save_metrics
 import logging
 
-
-
 HELPER_MODULE = 'numpyhelper'
 helper = get_helper(HELPER_MODULE)
-
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("fedn")
@@ -22,7 +19,7 @@ sys.path.append(os.path.abspath(dir_path))
 
 
 def train(model, out_model_path='/app/model_update.npz',  
-          data_path=None,batch_size=32, epochs=1, malicious=False, attack=None):
+          data_path=None,batch_size=32, epochs=6, malicious=False, attack=None):
     """ Complete a model update.
 
     Load model paramters from in_model_path (managed by the FEDn client),
@@ -42,17 +39,17 @@ def train(model, out_model_path='/app/model_update.npz',
     :param lr: The learning rate to use.
     :type lr: float
     """
-    client_index = os.environ.get("CLIENT_INDEX", "1")
-    out_model_path = f"/app/model_update_{client_index}.npz"
+    client_index_str = os.environ.get("CLIENT_INDEX", "1")
+    out_model_path = f"/app/model_update_{client_index_str}.npz"
+    param_path = '/var/parameter_store/param_store.json'
     logger.info(f"out_model_path={out_model_path}")
-    # Load data
+
     # Check if container sets MALICIOUS=true
     env_malicious_flag = os.environ.get("MALICIOUS", "false").strip().lower()
     # Convert to boolean
     env_malicious = (env_malicious_flag == "true")
 
-    logger.info(f"env_malicious_flag={env_malicious_flag}, env_malicious={env_malicious}")
-    client_index_str = os.environ.get("CLIENT_INDEX")
+    logger.info(f"env_malicious_flag={env_malicious_flag}, env_malicious={env_malicious}, client_index_str={client_index_str}")
     if client_index_str is None:
         # Default to 0 if none
         logger.warning("No CLIENT_INDEX found, defaulting to 0 (benign).")
@@ -60,17 +57,15 @@ def train(model, out_model_path='/app/model_update.npz',
     else:
         client_index = int(client_index_str)
 
-    logger.info(f"client_index={client_index}")
-
-    param_path = '/var/parameter_store/param_store.json'
     if os.path.isfile(param_path):
         with open(param_path, 'r') as f:
             store = json.load(f)
-
+        # find the right client in the parameter store
         client_conf = next(
             (c for c in store.get("clients", []) if c["client_id"] == client_index),
             None
         )
+        # load parameters from the parameter store
         if client_conf:
             param_store_malicious = client_conf.get("is_malicious", False)
             malicious = env_malicious or param_store_malicious
@@ -80,10 +75,9 @@ def train(model, out_model_path='/app/model_update.npz',
             else:
                 attack = "none"
                 inflation_factor = 1
-
+            # load hyperparameters from the parameter store
             batch_size = store.get("batch_size", batch_size)
             epochs     = store.get("epochs", epochs)
-
         else:
             logger.warning(f"No client entry found for client_id={client_index}. Using defaults.")
             inflation_factor = 1
@@ -94,10 +88,10 @@ def train(model, out_model_path='/app/model_update.npz',
     logger.info(f"[TRAIN] client_index={client_index}, malicious={malicious}, attack={attack}")
     logger.info(f"[TRAIN] hyperparams: epochs={epochs}, batch_size={batch_size}, inflation_factor={inflation_factor}")
 
+    # load data
     x_train, y_train = load_data(data_path)
     x_train = np.array(x_train)
     y_train = np.array(y_train)
-
 
     if malicious:
         logger.info(f"[DEBUG] Attack mode '{attack}' enabled.")
@@ -125,49 +119,20 @@ def train(model, out_model_path='/app/model_update.npz',
     y_train_df = pd.DataFrame(y_train)
 
     n_samples = len(x_train_df)
-    classes = [0, 1, 2]
+    classes = np.unique(y_train_df)
 
     rng = np.random.default_rng(42)
     indices = np.arange(n_samples)
     rng.shuffle(indices)
-    
     x_train_df = x_train_df.iloc[indices].reset_index(drop=True)
     y_train_df = y_train_df.iloc[indices].reset_index(drop=True)
 
-    if n_samples < batch_size:
-        # If there's less data than one batch, feed all
-        model.partial_fit(x_train_df, y_train_df.values.ravel(), classes=classes)
-    else:
-        x_batch = x_train_df.iloc[:batch_size]
-        y_batch = y_train_df.iloc[:batch_size]
-        model.partial_fit(x_batch, y_batch.values.ravel(), classes=classes)
+    model.fit(x_train_df, y_train_df.values.ravel())
 
-    for e in range(epochs):
-        indices = np.arange(n_samples)
-        rng.shuffle(indices)
-
-        x_train_df = x_train_df.iloc[indices].reset_index(drop=True)
-        y_train_df = y_train_df.iloc[indices].reset_index(drop=True)
-
-        start_idx = 0
-        while start_idx < n_samples:
-            end_idx = start_idx + batch_size
-            x_batch = x_train_df.iloc[start_idx:end_idx]
-            y_batch = y_train_df.iloc[start_idx:end_idx]
-
-            model.partial_fit(x_batch, y_batch.values.ravel(), classes=classes)
-
-            start_idx += batch_size
-
-        logger.info(f"[Epoch {e+1}/{epochs}] partial_fit complete.")
-
-
-
-    # Metadata needed for aggregation server side
     metadata = {
         # num_examples are mandatory
         'num_examples': len(x_train),
-        'epochs': epochs,
+        'epochs': epochs
     }
 
     # Save JSON metadata file (mandatory)

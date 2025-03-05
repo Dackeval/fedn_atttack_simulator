@@ -71,32 +71,25 @@ def save_parameters_to_bytes(model):
     with tempfile.NamedTemporaryFile(suffix=".npz", delete=False) as tmpf:
         temp_path = tmpf.name
         helper.save(parameters_np, temp_path)
-        logger.info(f'temp_path: {temp_path}')
     with open(temp_path, "rb") as f:
         data_bytes = f.read()
     try:
         os.remove(temp_path)
     except OSError:
         pass
-    
-    logger.info('model saved to bytesio')
 
     return io.BytesIO(data_bytes)
 
 def load_parameters_from_bytesio(buffer):
-    
     with tempfile.NamedTemporaryFile(suffix=".npz", delete=False) as tmpf:
         temp_path = tmpf.name
         tmpf.write(buffer.getbuffer())
-        logger.info(f'temp_path: {temp_path}')
-        
+
     model = compile_model()
     parameters_np = helper.load(temp_path)
     params_dict = zip(model.state_dict().keys(), parameters_np)
     state_dict = collections.OrderedDict({key: torch.tensor(x) for key, x in params_dict})
     model.load_state_dict(state_dict, strict=True)
-
-    logger.info('model loaded from bytesio')
 
     try:
         os.remove(temp_path)

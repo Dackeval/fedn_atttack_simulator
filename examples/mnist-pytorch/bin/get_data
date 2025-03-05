@@ -1,6 +1,5 @@
 #!./.mnist-pytorch/bin/python
 import os
-
 import fire
 import torchvision
 

@@ -23,13 +23,7 @@ def generate_variable_name(length=8):
     return first_char + other_chars
 
 def on_train(in_model_bytes, client_settings=None):
-    logger.info('in_model_bytes: %s', in_model_bytes)
-    logger.info('in_model type: %s', type(in_model_bytes))
-    
     in_model = load_parameters_from_bytesio(in_model_bytes)
-
-    logger.info('Loaded in_model: %s', in_model)
-    logger.info('Loaded in_model type: %s', type(in_model))
     metadata, out_model = train(in_model)
     metadata = {"training_metadata": metadata}
     out_model_bytesIO = save_parameters_to_bytes(out_model)
@@ -37,7 +31,6 @@ def on_train(in_model_bytes, client_settings=None):
     return out_model_bytesIO, metadata
 
 def on_validate(in_model_bytes):
-
     logger.info('Validating model')
     in_model = load_parameters_from_bytesio(in_model_bytes)
     logger.info('Validatin complete')

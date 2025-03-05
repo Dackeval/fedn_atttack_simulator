@@ -2,12 +2,11 @@
 import os
 import json
 from math import floor
-
 import fire
-
 
 def splitset(dataset, parts):
     n = len(dataset)
+    print('length of dataset: ', n)
     local_n = floor(n/parts)
     result = []
     for i in range(parts):

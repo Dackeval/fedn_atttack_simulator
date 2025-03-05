@@ -4,7 +4,6 @@ import docker
 import sys
 import subprocess
 import json
-# sys.path.append('/home/ubuntu/fedn-attack-sim-uu/examples/mnist-pytorch')
 import os
 import bin.parameter_store as ps
 from bin.split_data import split as sd
@@ -49,16 +48,6 @@ def kill_clients():
         print(f"Error occurred while executing the script: {e}")
         print(e.output)
 
-def get_combiner_ip():
-    with open("/home/ubuntu/fedn-attack-sim-uu/simulator/config/api_server_config.json", "r") as file:
-        config = json.load(file)
-    
-    if config['initialized']:
-        return config['api_server_ip']
-    else:
-        print(f"API configuration has not been set!")
-        exit()
-
 def get_valid_int(prompt):
     """
     prompt for an int until valid input
@@ -83,7 +72,14 @@ def get_valid_float(prompt):
         except ValueError:
             print("Invalid input. Please enter a valid float.\n")
 
-
+def create_seed_package(cmd, cwd=None):
+    activate_env = "source ../../fedn_env/bin/activate && "
+    full_cmd = activate_env + cmd
+    res = subprocess.run(full_cmd, shell=True, cwd=cwd, capture_output=True, text=True, executable='/bin/bash')
+    if res.returncode != 0:
+        print(f"Command '{cmd}' failed with error:\n{res.stderr}")
+    else:
+        print(f"Command '{cmd}' succeeded:\n{res.stdout}")
 
 
 def get_valid_attack_type(prompt):
@@ -108,12 +104,13 @@ def get_valid_attack_type(prompt):
                 print("  -", t)
             print()
 
-
+# Simulator parameter inputs
+# ----------------------------
 COMBINER_IP = input("Enter host IP: ")
 print(f"Combiner IP: {COMBINER_IP} is set\n")
 
-TOKEN = input("Enter token: ")
-print(f"Token: {TOKEN} is set\n")
+CLIENT_TOKEN = input("Enter client token: ")
+print(f"Client token: {CLIENT_TOKEN} is set\n")
 
 ATTACK_TYPE = get_valid_attack_type("Enter attack type: ")
 print(f"Attack type: {ATTACK_TYPE} is set\n")
@@ -142,45 +139,46 @@ MALICIOUS_CLIENTS = get_valid_int("Enter number of malicious clients (integer): 
 print(f"Malicious clients: {MALICIOUS_CLIENTS} is set\n")
 
 
-# check if ip and token works
-DISCOVER_HOST = COMBINER_IP
+# Write the parameters to the parameter store
+# ------------------------------
+ps.create_parameter_store(BENIGN_CLIENTS, MALICIOUS_CLIENTS, ATTACK_TYPE, DEFENSE_TYPE, COMBINER_IP, CLIENT_TOKEN, LEARNING_RATE, EPOCHS, BATCH_SIZE, inflation_factor)
+
+# SPLIT DATA
+# ------------------------------
+total_clients = BENIGN_CLIENTS + MALICIOUS_CLIENTS
+sd(total_clients)
+
+# UPLOAD PACKAGE AND SEED MODEL
+# ------------------------------
+DISCOVER_HOST = COMBINER_IP.removeprefix('https://')
+client_path = os.path.join(os.path.dirname(__file__), 'client')
+project_path = os.path.dirname(__file__)
+seed_model_path = os.path.join(client_path, 'seed.npz')
+
 
 try:
-    os.environ["FEDN_AUTH_TOKEN"] = TOKEN
-    client = APIClient(host=COMBINER_IP, secure=True, verify=True)
+    auth_token = str(input("Enter auth_token: "))
+
+    os.environ["FEDN_AUTH_TOKEN"] = auth_token
+    client = APIClient(host=DISCOVER_HOST, secure=True, verify=True)
+
+    # Upload seed model and package
+    client.set_active_model(seed_model_path)
+    package_name = str(input('Enter package name: '))
+    client.set_active_package('./client/package.tgz', 'numpyhelper', package_name)
+
     print(f"API Client connected to combiner at: {DISCOVER_HOST}")
 except Exception as e:
     print(f"Error connecting to combiner: {e}")
     COMBINER_IP = input("Enter host IP: ")
-    print(f"Combiner IP: {COMBINER_IP} is set")
-    TOKEN = input("Enter token: ")
-    print(f"Token: {TOKEN} is set")
-    os.environ["FEDN_AUTH_TOKEN"] = TOKEN
+    print(f"Combiner IP: {DISCOVER_HOST} is set")
+    auth_token = str(input("Enter auth_token: "))
+    print(f"Token: {auth_token} is set")
+    os.environ["FEDN_AUTH_TOKEN"] = auth_token
     client = APIClient(host=COMBINER_IP, secure=True, verify=True)
+    client.set_active_model(seed_model_path)
+    client.set_active_package('./client/package.tgz', 'numpyhelper', package_name)
     print(f"API Client connected to combiner at: {DISCOVER_HOST}")
-
-# ------------------------------
-# NEED TO ADD IDENTIFICATION OF BENIGN AND MALICIOUS CLIENTS TO THE PARAMETER STORE JSON FILE
-# Maybe id by number, last is malicious.. 
-# ------------------------------
-# Write the parameters to the parameter store
-ps.create_parameter_store(BENIGN_CLIENTS, MALICIOUS_CLIENTS, ATTACK_TYPE, DEFENSE_TYPE, COMBINER_IP, TOKEN, LEARNING_RATE, EPOCHS, BATCH_SIZE, inflation_factor)
-
-# ------------------------------
-# SPLIT DATA
-total_clients = BENIGN_CLIENTS + MALICIOUS_CLIENTS
-sd(total_clients)
-# ------------------------------
-
-# ------------------------------
-# ( NEED TO RUN BUILD SCRIPT TO CREATE THE PACKAGE AND SEED MODEL )
-# ------------------------------
-# # Upload seed model and package
-# client.set_active_model('./client/seed.npz')
-# package_name = str(input("Enter package name: "))
-# client.set_active_package('./client/package.tgz', 'numpyhelper', package_name)
-
-
 
 
 # CLIENTSs
@@ -193,47 +191,48 @@ if len(running_containers) != 0:
         print(f"{id} - {container.name}")
 else:
     print("No containers are running!")
-    start_clients(COMBINER_IP, TOKEN, BENIGN_CLIENTS, MALICIOUS_CLIENTS)
+    start_clients(COMBINER_IP, CLIENT_TOKEN, BENIGN_CLIENTS, MALICIOUS_CLIENTS)
 
 
 
-
-# ------------------------------
-# SET ACTIVE PACKAGE AND MODEL
-# START SESSION
-# RUN UNTIL FINISHED
-# KILL CLIENTS
-# ------------------------------
+# time.sleep(10)
 
 
-# client.set_active_package('package.tgz', 'numpyhelper')
-# client.set_active_model('seed.npz')
-# seed_model = client.get_initial_model()
+# session_name = str(input("Set session_id: "))
+# rounds = int(input("Set the number of rounds: "))
+# aggr = str(input("Set aggregator: "))
+# active_model = client.get_active_model()
+# model_id = active_model['id']
+# round_timeout = int(input("Set round timeout: "))
+# rounds = int(input('Set number of rounds: '))
 
-
-# session_id = input("Set session_id: ")
-# rounds = input("Set the number of rounds: ")
 
 # session_config_fedavg = {
+#     "name": session_name,
+#     "aggregator": aggr,
+#     "model_id": model_id,
+#     "round_timeout": round_timeout,
+#     "rounds": rounds,
+#     "round_buffer_size": int(-1),
+#     "delete_models": True,
+#     "validate": True,
 #     "helper": "numpyhelper",
-#     "session_id": session_id,
-#     "aggregator": "fedavg",
-#     "model_id": seed_model['model_id'],
-#     "rounds": int(rounds)
+#     "min_clients": int(1),
+#     "requested_clients": int(8)
 # }
 
 # result_fedavg = client.start_session(**session_config_fedavg)
 # time.sleep(10)
 
-# def run_until_finished(session_id):
-#     while not client.session_is_finished(session_id):
-#         models = client.list_models(session_id)
+# def run_until_finished(session_name):
+#     while not client.session_is_finished(session_name):
+#         models = client.get_models(session_name)
 #         print(f"Rounds: {models['count']} out of {session_config_fedavg['rounds']} completed!", end="\r")
 #         time.sleep(15)
 
-# # Call the function
-# run_until_finished(session_id) 
+# # # Call the function
+# run_until_finished(session_name) 
 
-# if client.session_is_finished(session_id):
-#     print(f"The session: {session_id} is over!")
+# if client.session_is_finished(session_name):
+#     print(f"The session: {session_name} is over!")
 #     kill_clients()

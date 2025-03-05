@@ -71,9 +71,3 @@ def create_parameter_store(
         json.dump(store, file, indent=4)
         print(f"File {file_name} created and data written.")
 
-
-# if __name__ == '__main__':
-#     fire.Fire({
-#         'create_parameter_store': create_parameter_store,
-#         # 'delete_parameter_store': delete_parameter_store,
-#     })

@@ -4,7 +4,6 @@ from fedn.network.clients.fedn_client import FednClient, ConnectToApiResult
 from train import train
 from validate import validate
 from model import load_parameters_from_bytesio, save_parameters_to_bytes
-import torch
 import random
 import string
 import logging
@@ -18,15 +17,8 @@ def get_api_url(api_url: str, api_port: int):
         url += "/"
     return url
 
-
-
 def on_train(in_model_bytes, client_settings=None):
-
-
     in_model = load_parameters_from_bytesio(in_model_bytes)
-
-    logger.info(f'in_model: {in_model}')
-    logger.info(f'in_model type: {type(in_model)}')
     metadata, out_model = train(in_model)
     metadata = {f'training_metadata': metadata}
     out_model_bytesIO = save_parameters_to_bytes(out_model)
@@ -34,7 +26,6 @@ def on_train(in_model_bytes, client_settings=None):
     return out_model_bytesIO, metadata
 
 def on_validate(in_model_bytes):
-
     logger.info('In validate')
     in_model = load_parameters_from_bytesio(in_model_bytes)
     logger.info('bytes-np converted')
@@ -43,17 +34,16 @@ def on_validate(in_model_bytes):
     return metrics
 
 def on_predict(in_model):
-    # Do your prediction here...
+    # Might need to call prediction.py, not sure when this is used.
     prediction = {
         "prediction": 1,
         "confidence": 0.9,
     }
     return prediction
 
-
 def generate_variable_name(length=8):
-    first_char = random.choice(string.ascii_letters + "_")  # First character: letter or underscore
-    other_chars = ''.join(random.choices(string.ascii_letters + string.digits + "_", k=length-1))  # Remaining characters
+    first_char = random.choice(string.ascii_letters + "_")  # first character: letter or underscore
+    other_chars = ''.join(random.choices(string.ascii_letters + string.digits + "_", k=length-1))  # remaining characters
     return first_char + other_chars
 
 def main(api_url: str, api_port: int, token: str = None):

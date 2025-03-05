@@ -1,13 +1,10 @@
 # Remove the python_env tag below to handle the environment manually
 python_env: python_env.yaml 
-
+# only running build and startup commands. train and validate through docker_client.py
 entry_points:
   build:
     command: python model.py
   startup:
     command: python load__data.py
-  # train:
-  #   command: python train.py
-  # validate:
-  #   command: python validate.py
+
 

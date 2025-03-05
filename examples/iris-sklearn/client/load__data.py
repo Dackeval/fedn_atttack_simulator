@@ -9,13 +9,7 @@ abs_path = os.path.abspath(dir_path)
 
 
 def _get_data_path():
-    """ For test automation using docker-compose. """
-    # Figure out FEDn client number from container name
-    # client = docker.from_env()
-    # container = client.containers.get(os.environ['HOSTNAME'])
-    # number = container.name[-1]
-    # number = 1 
-    # # Return data path
+    # for local testing
     # return "/app/client/data/clients/1/iris.json"
     client_index = os.environ.get("CLIENT_INDEX", "1")
     return f"/app/data/clients/{client_index}/iris.json"
