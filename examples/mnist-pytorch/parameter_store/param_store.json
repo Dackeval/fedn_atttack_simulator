@@ -1,12 +1,12 @@
 {
-    "ben_count": 1,
-    "mal_count": 1,
+    "ben_count": 2,
+    "mal_count": 0,
     "attack_type": "label_flip_basic",
     "defence_type": "none",
     "host": "https://api.fedn.scaleoutsystems.com/simulatortest-fiq-fedn-reducer",
     "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQzMjY4MDMzLCJpYXQiOjE3NDA2NzYwMzMsImp0aSI6IjU0YTYwMzZjNGRiZDRhMzliNzMyOTM4NTNkMzg0Y2Y5IiwidXNlcl9pZCI6MTYxLCJjcmVhdG9yIjoiU2NhbGVvdXRpbnRlcm4iLCJyb2xlIjoiY2xpZW50IiwicHJvamVjdF9zbHVnIjoic2ltdWxhdG9ydGVzdC1maXEifQ.3R_kN2OHR-l3VdwabvwEqcpXWXDO4qTtradMwlrBmYw",
     "lr": 0.01,
-    "epochs": 2,
+    "epochs": 5,
     "batch_size": 32,
     "inflation_factor": 1,
     "clients": [
@@ -16,9 +16,7 @@
         },
         {
             "client_id": 2,
-            "is_malicious": true,
-            "attack_type": "label_flip_basic",
-            "inflation_factor": 1
+            "is_malicious": false
         }
     ]
 }

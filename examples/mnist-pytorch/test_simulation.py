@@ -7,6 +7,7 @@ import json
 import os
 import bin.parameter_store as ps
 from bin.split_data import split as sd
+import yaml
 
 def start_clients(combiner_ip, token, benign_client_count, malicious_client_count):
     script_path = './bin/start_clients.sh'  # Path to your shell script
@@ -104,6 +105,61 @@ def get_valid_attack_type(prompt):
                 print("  -", t)
             print()
 
+def send_params_to_kubernetes_pods(COMBINER_IP, CLIENT_TOKEN, 
+                                   ATTACK_TYPE, inflation_factor,
+                                   BATCH_SIZE, EPOCHS, LEARNING_RATE,
+                                   DEFENSE_TYPE, BENIGN_CLIENTS, MALICIOUS_CLIENTS,
+                                   ):
+    total_clients = BENIGN_CLIENTS + MALICIOUS_CLIENTS
+    client_list = []
+
+    for i in range(BENIGN_CLIENTS):
+        client_index = i + 1
+        client_list.append(
+            {
+                "id": client_index,
+                "is_malicious": False,
+                "attack_type": ATTACK_TYPE,
+                "batch_size": BATCH_SIZE,
+                "lr": LEARNING_RATE,
+                "epochs": EPOCHS,
+                "inflation_factor": inflation_factor
+            }
+        )
+    for i in range(MALICIOUS_CLIENTS):
+        client_index = BENIGN_CLIENTS + i + 1
+        client_list.append(
+            {
+                "id": client_index,
+                "is_malicious": True,
+                "attack_type": ATTACK_TYPE,
+                "batch_size": BATCH_SIZE,
+                "lr": LEARNING_RATE,
+                "epochs": EPOCHS,
+                "inflation_factor": inflation_factor
+            }
+        )
+
+    with open("chart/values.yaml", "r") as f:
+        values = yaml.safe_load(f)
+    
+    values["combinerIP"] = COMBINER_IP
+    values["clientToken"] = CLIENT_TOKEN
+    values["clients"] = client_list
+    values["benign"]["replicas"] = BENIGN_CLIENTS
+    values["malicious"]["replicas"] = MALICIOUS_CLIENTS
+
+    with open("values-temp.yaml", "w") as f:
+        yaml.safe_dump(values, f)
+    
+    helm_cmd = [
+        "helm", "upgrade", "--install", "mnist-sim",
+         "./chart", "-f", "values-temp.yaml"
+    ]
+    subprocess.run(helm_cmd, check=True)
+    print("Clients deployed with user-supplied config!")
+
+
 # Simulator parameter inputs
 # ----------------------------
 COMBINER_IP = input("Enter host IP: ")
@@ -139,9 +195,10 @@ MALICIOUS_CLIENTS = get_valid_int("Enter number of malicious clients (integer): 
 print(f"Malicious clients: {MALICIOUS_CLIENTS} is set\n")
 
 
-# Write the parameters to the parameter store
+# Keeping the parameter store for central storage on S3 bucket to keep indices for data partitions
 # ------------------------------
 ps.create_parameter_store(BENIGN_CLIENTS, MALICIOUS_CLIENTS, ATTACK_TYPE, DEFENSE_TYPE, COMBINER_IP, CLIENT_TOKEN, LEARNING_RATE, EPOCHS, BATCH_SIZE, inflation_factor)
+
 
 # SPLIT DATA
 # ------------------------------
@@ -181,17 +238,24 @@ except Exception as e:
     print(f"API Client connected to combiner at: {DISCOVER_HOST}")
 
 
-# CLIENTSs
-docker_client = docker.from_env()
-running_containers = docker_client.containers.list()
+# Add Kubernetes environment setting for the different clients
+send_params_to_kubernetes_pods(
+  COMBINER_IP, CLIENT_TOKEN, ATTACK_TYPE, inflation_factor,
+  BATCH_SIZE, EPOCHS, LEARNING_RATE, DEFENSE_TYPE,
+  BENIGN_CLIENTS, MALICIOUS_CLIENTS
+)
 
-if len(running_containers) != 0:
-    print(f"{len(running_containers)} clients are running!")
-    for id, container in enumerate(running_containers):
-        print(f"{id} - {container.name}")
-else:
-    print("No containers are running!")
-    start_clients(COMBINER_IP, CLIENT_TOKEN, BENIGN_CLIENTS, MALICIOUS_CLIENTS)
+# # CLIENTSs
+# docker_client = docker.from_env()
+# running_containers = docker_client.containers.list()
+
+# if len(running_containers) != 0:
+#     print(f"{len(running_containers)} clients are running!")
+#     for id, container in enumerate(running_containers):
+#         print(f"{id} - {container.name}")
+# else:
+#     print("No containers are running!")
+#     start_clients(COMBINER_IP, CLIENT_TOKEN, BENIGN_CLIENTS, MALICIOUS_CLIENTS)
 
 
 

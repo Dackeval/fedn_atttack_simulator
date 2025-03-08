@@ -1,0 +1,47 @@
+{{- range $client := .Values.clients }}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: client-{{ $client.id }}
+spec:
+  serviceName: "client-{{ $client.id }}-headless"
+  replicas: 1
+  selector:
+    matchLabels:
+      client-id: "{{ $client.id }}"
+  template:
+    metadata:
+      labels:
+        client-id: "{{ $client.id }}"
+        app: "mnist-client"
+    spec:
+      containers:
+        - name: client-{{ $client.id }}
+          image: "{{ $.Values.image.repository }}:{{ $.Values.image.tag }}"
+          env:
+            - name: COMBINER_IP
+              value: "{{ $.Values.combinerIP }}"
+            - name: CLIENT_TOKEN
+              value: "{{ $.Values.clientToken }}"
+
+            - name: CLIENT_ID
+              value: "{{ $client.id | toString }}"
+            - name: MALICIOUS
+              value: "{{ $client.is_malicious | toJson }}"
+            - name: ATTACK_TYPE
+              value: "{{ $client.attack_type }}"
+            - name: BATCH_SIZE
+              value: "{{ $client.batch_size | toString }}"
+            - name: LR
+              value: "{{ $client.lr | toString }}"
+            - name: EPOCHS
+              value: "{{ $client.epochs | toString }}"
+            - name: INFLATION_FACTOR
+              value: "{{ $client.inflation_factor | toString }}"
+          args:
+            - "--api-url"
+            - "{{ $.Values.combinerIP }}"
+            - "--token"
+            - "{{ $.Values.clientToken }}"
+{{- end }}

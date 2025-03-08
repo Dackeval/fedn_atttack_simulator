@@ -1,0 +1,25 @@
+benign:
+  replicas: 2
+clientToken: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQzMjY4MDMzLCJpYXQiOjE3NDA2NzYwMzMsImp0aSI6IjU0YTYwMzZjNGRiZDRhMzliNzMyOTM4NTNkMzg0Y2Y5IiwidXNlcl9pZCI6MTYxLCJjcmVhdG9yIjoiU2NhbGVvdXRpbnRlcm4iLCJyb2xlIjoiY2xpZW50IiwicHJvamVjdF9zbHVnIjoic2ltdWxhdG9ydGVzdC1maXEifQ.3R_kN2OHR-l3VdwabvwEqcpXWXDO4qTtradMwlrBmYw
+clients:
+- attack_type: label_flip_basic
+  batch_size: 32
+  epochs: 5
+  id: 1
+  inflation_factor: 1
+  is_malicious: false
+  lr: 0.01
+- attack_type: label_flip_basic
+  batch_size: 32
+  epochs: 5
+  id: 2
+  inflation_factor: 1
+  is_malicious: false
+  lr: 0.01
+combinerIP: https://api.fedn.scaleoutsystems.com/simulatortest-fiq-fedn-reducer
+defense_type: none
+image:
+  repository: dackevall/mnist-pytorch
+  tag: latest
+malicious:
+  replicas: 0

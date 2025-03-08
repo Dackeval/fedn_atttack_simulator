@@ -1,0 +1,9 @@
+# This is where we define the basic info of the chart, such as name, version of the chart etc.
+
+apiVersion: v2
+name: chart
+description: A Helm chart for MNIST-Pytorch FEDn Attack Simulator
+
+type: application
+version: 0.1.0
+appVersion: "1.16.0"

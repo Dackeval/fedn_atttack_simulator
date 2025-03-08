@@ -10,7 +10,7 @@ abs_path = os.path.abspath(dir_path)
 def _get_data_path():   
     # # # for local docker testing
     # return "/app/client/data/clients/1/mnist.pt"
-    client_index = os.environ.get("CLIENT_INDEX", "1")
+    client_index = os.environ.get("CLIENT_ID", "1")
     return f"/app/data/clients/{client_index}/mnist.pt"
 
     
