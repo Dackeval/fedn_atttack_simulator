@@ -30,7 +30,7 @@ def validate(global_model, out_json_path='/app/validation.json', data_path=None)
     x_train, y_train = load_data(data_path, is_train=True)
     x_test, y_test = load_data(data_path, is_train=False)
 
-    client_index = os.environ.get("CLIENT_INDEX", "1")
+    client_index = os.environ.get("CLIENT_ID", "1")
     local_model = load_parameters(f"/app/model_update_{client_index}.npz")
 
     # logger.info(f"/app/model_update_{client_index}.npz") # Debugging

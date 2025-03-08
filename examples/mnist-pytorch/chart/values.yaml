@@ -1,0 +1,27 @@
+image:
+  repository: dackevall/mnist-pytorch
+  tag: latest
+combinerIP: "https://api.fedn.scaleoutsystems.com/simulatortest-fiq-fedn-reducer"
+clientToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQzMjY4MDMzLCJpYXQiOjE3NDA2NzYwMzMsImp0aSI6IjU0YTYwMzZjNGRiZDRhMzliNzMyOTM4NTNkMzg0Y2Y5IiwidXNlcl9pZCI6MTYxLCJjcmVhdG9yIjoiU2NhbGVvdXRpbnRlcm4iLCJyb2xlIjoiY2xpZW50IiwicHJvamVjdF9zbHVnIjoic2ltdWxhdG9ydGVzdC1maXEifQ.3R_kN2OHR-l3VdwabvwEqcpXWXDO4qTtradMwlrBmYw"
+benign:
+  replicas: 1
+malicious:
+  replicas: 1
+
+clients:
+  - id: 1
+    is_malicious: false
+    attack_type: "label_flip_basic"
+    inflation_factor: 2
+    batch_size: 32
+    epochs: 2
+    lr: 0.01
+  - id: 2
+    is_malicious: true
+    attack_type: "backdoor_35int"
+    inflation_factor: 5
+    batch_size: 64
+    epochs: 3
+    lr: 0.005
+
+defense_type: "none"

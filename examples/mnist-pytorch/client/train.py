@@ -8,6 +8,7 @@ import logging
 from fedn.utils.helpers.helpers import save_metadata, get_helper
 from data import load_data
 from model import load_parameters, save_parameters, compile_model
+from load_environment_param import load_env_params
 
 logger = logging.getLogger("fedn")
 logging.basicConfig(level=logging.INFO)
@@ -49,57 +50,13 @@ def train(
     """
 
     x_train, y_train = load_data(data_path)
-
-    # set out model path based on client index
-    client_index_str = os.environ.get("CLIENT_INDEX", "1")
+    
+    # Read environment variables from Kubernetes pod
+    client_index_str, malicious, attack, inflation_factor, batch_size, epochs, lr = load_env_params()
     out_model_path = f"/app/model_update_{client_index_str}.npz"
-    param_path = '/var/parameter_store/param_store.json'
-
-    # Check if container sets MALICIOUS=true and print 
-    env_malicious_flag = os.environ.get("MALICIOUS", "false").strip().lower()
-    env_malicious = (env_malicious_flag == "true")
-    logger.info(f"env_malicious_flag={env_malicious_flag}, env_malicious={env_malicious}, client_index={client_index_str}" )
-
-    if client_index_str is None:
-        # Default to 0 if none
-        logger.warning("No CLIENT_INDEX found, defaulting to 0 (benign).")
-        client_index = 0
-    else:
-        client_index = int(client_index_str)
-
-    if os.path.isfile(param_path):
-        with open(param_path, 'r') as f:
-            store = json.load(f)
-        # Find the right client in the store
-        client_conf = next(
-            (c for c in store.get("clients", []) if c["client_id"] == client_index),
-            None
-        )
-        # load parameters 
-        if client_conf:
-            param_store_malicious = client_conf.get("is_malicious", False)
-            malicious = env_malicious or param_store_malicious
-            if malicious:
-                attack = client_conf.get("attack_type", "none")
-                inflation_factor = client_conf.get("inflation_factor", 1)
-            else:
-                attack = "none"
-                inflation_factor = 1
-
-            # Load other params
-            batch_size = store.get("batch_size", batch_size)
-            epochs     = store.get("epochs", epochs)
-            lr         = store.get("lr", lr)
-
-        else:
-            logger.warning(f"No client entry found for client_id={client_index}. Using defaults.")
-            inflation_factor = 1
-    else:
-        logger.warning("No param_store.json found! Using all defaults.")
-        inflation_factor = 1
 
     # Print for debugging
-    logger.info(f"[TRAIN] client_index={client_index}, malicious={malicious}, attack={attack}")
+    logger.info(f"[TRAIN] client_index={client_index_str}, malicious={malicious}, attack={attack}")
     logger.info(f"[TRAIN] final hyperparams: epochs={epochs}, batch_size={batch_size}, lr={lr}, inflation_factor={inflation_factor}")
 
     # Implement different version of training for malicious clients
