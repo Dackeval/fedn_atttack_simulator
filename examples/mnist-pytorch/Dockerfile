@@ -12,6 +12,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the client code only
 COPY client /app/client
 COPY parameter_store /app/parameter_store
-COPY data /app/data
+#COPY data /app/data
 
 ENTRYPOINT ["python", "/app/client/docker_client.py"]

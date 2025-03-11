@@ -1,20 +1,23 @@
 {{- range $client := .Values.clients }}
 ---
 apiVersion: apps/v1
-kind: StatefulSet
+kind: Deployment
 metadata:
   name: client-{{ $client.id }}
+  labels:
+    app: "mnist-client"
+    client-id: "{{ $client.id }}"
 spec:
-  serviceName: "client-{{ $client.id }}-headless"
   replicas: 1
   selector:
     matchLabels:
+      app: "mnist-client"
       client-id: "{{ $client.id }}"
   template:
     metadata:
       labels:
-        client-id: "{{ $client.id }}"
         app: "mnist-client"
+        client-id: "{{ $client.id }}"
     spec:
       containers:
         - name: client-{{ $client.id }}
@@ -39,6 +42,16 @@ spec:
               value: "{{ $client.epochs | toString }}"
             - name: INFLATION_FACTOR
               value: "{{ $client.inflation_factor | toString }}"
+            
+            - name: DATA_ENDPOINT
+              value: "{{ $client.data_endpoint | toString }}"
+            - name: DATA_ACCESS_KEY
+              value: "{{ $client.data_access_key | toString }}"
+            - name: DATA_SECRET_KEY
+              value: "{{ $client.data_secret_key | toString }}"
+            - name: DATA_BUCKET_NAME
+              value: "{{ $client.data_bucket_name | toString }}"
+
           args:
             - "--api-url"
             - "{{ $.Values.combinerIP }}"

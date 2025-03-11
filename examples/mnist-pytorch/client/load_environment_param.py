@@ -18,5 +18,9 @@ def load_env_params():
     epochs = int(os.environ.get("EPOCHS", "5"))
     lr = float(os.environ.get("LR", "0.01"))
     malicious = env_malicious
+    data_endpoint = str(os.environ.get("DATA_ENDPOINT", ""))
+    data_access_key =  str(os.environ.get("DATA_ACCESS_KEY", ""))
+    data_secret_key = str(os.environ.get("DATA_SECRET_KEY", ""))
+    data_bucket_name =  str(os.environ.get("DATA_BUCKET_NAME", ""))
 
-    return client_index_str, malicious, attack, inflation_factor, batch_size, epochs, lr
+    return client_index_str, malicious, attack, inflation_factor, batch_size, epochs, lr, data_endpoint, data_access_key, data_secret_key, data_bucket_name

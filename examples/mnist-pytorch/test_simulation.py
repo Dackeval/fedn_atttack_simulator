@@ -109,6 +109,8 @@ def send_params_to_kubernetes_pods(COMBINER_IP, CLIENT_TOKEN,
                                    ATTACK_TYPE, inflation_factor,
                                    BATCH_SIZE, EPOCHS, LEARNING_RATE,
                                    DEFENSE_TYPE, BENIGN_CLIENTS, MALICIOUS_CLIENTS,
+                                   DATA_ENDPOINT, DATA_ACCESS_KEY, 
+                                   DATA_SECRET_KEY, DATA_BUCKET_NAME
                                    ):
     total_clients = BENIGN_CLIENTS + MALICIOUS_CLIENTS
     client_list = []
@@ -123,7 +125,11 @@ def send_params_to_kubernetes_pods(COMBINER_IP, CLIENT_TOKEN,
                 "batch_size": BATCH_SIZE,
                 "lr": LEARNING_RATE,
                 "epochs": EPOCHS,
-                "inflation_factor": inflation_factor
+                "inflation_factor": inflation_factor,
+                "data_endpoint": DATA_ENDPOINT,
+                "data_access_key": DATA_ACCESS_KEY,
+                "data_secret_key": DATA_SECRET_KEY,
+                "data_bucket_name": DATA_BUCKET_NAME
             }
         )
     for i in range(MALICIOUS_CLIENTS):
@@ -136,7 +142,11 @@ def send_params_to_kubernetes_pods(COMBINER_IP, CLIENT_TOKEN,
                 "batch_size": BATCH_SIZE,
                 "lr": LEARNING_RATE,
                 "epochs": EPOCHS,
-                "inflation_factor": inflation_factor
+                "inflation_factor": inflation_factor,
+                "data_endpoint": DATA_ENDPOINT,
+                "data_access_key": DATA_ACCESS_KEY,
+                "data_secret_key": DATA_SECRET_KEY,
+                "data_bucket_name": DATA_BUCKET_NAME
             }
         )
 
@@ -194,16 +204,30 @@ print(f"Benign clients: {BENIGN_CLIENTS} is set\n")
 MALICIOUS_CLIENTS = get_valid_int("Enter number of malicious clients (integer): ")
 print(f"Malicious clients: {MALICIOUS_CLIENTS} is set\n")
 
+DATA_ENDPOINT = input("Enter the data endpoint: ")
+print(f"Data_endpoint is set: '{DATA_ENDPOINT}'")
+
+DATA_ACCESS_KEY = input("Enter the data access key: ")
+print(f"Data access key is set: '{DATA_ACCESS_KEY}'")
+
+DATA_SECRET_KEY = input("Enter the data secret key: ")
+print(f"Data secret key is set: '{DATA_SECRET_KEY}'")
+
+DATA_BUCKET_NAME = input("Enter the data bucket name: ")
+print(f"Data bucket name is set: '{DATA_BUCKET_NAME}'")
+
 
 # Keeping the parameter store for central storage on S3 bucket to keep indices for data partitions
 # ------------------------------
-ps.create_parameter_store(BENIGN_CLIENTS, MALICIOUS_CLIENTS, ATTACK_TYPE, DEFENSE_TYPE, COMBINER_IP, CLIENT_TOKEN, LEARNING_RATE, EPOCHS, BATCH_SIZE, inflation_factor)
+ps.create_parameter_store(BENIGN_CLIENTS, MALICIOUS_CLIENTS, ATTACK_TYPE, 
+                          DEFENSE_TYPE, COMBINER_IP, CLIENT_TOKEN, LEARNING_RATE, 
+                          EPOCHS, BATCH_SIZE, inflation_factor)
 
 
 # SPLIT DATA
 # ------------------------------
 total_clients = BENIGN_CLIENTS + MALICIOUS_CLIENTS
-sd(total_clients)
+sd(total_clients, DATA_ENDPOINT, DATA_ACCESS_KEY, DATA_SECRET_KEY, DATA_BUCKET_NAME)
 
 # UPLOAD PACKAGE AND SEED MODEL
 # ------------------------------
@@ -242,8 +266,8 @@ except Exception as e:
 send_params_to_kubernetes_pods(
   COMBINER_IP, CLIENT_TOKEN, ATTACK_TYPE, inflation_factor,
   BATCH_SIZE, EPOCHS, LEARNING_RATE, DEFENSE_TYPE,
-  BENIGN_CLIENTS, MALICIOUS_CLIENTS
-)
+  BENIGN_CLIENTS, MALICIOUS_CLIENTS, DATA_ENDPOINT, 
+  DATA_ACCESS_KEY, DATA_SECRET_KEY, DATA_BUCKET_NAME)
 
 # # CLIENTSs
 # docker_client = docker.from_env()

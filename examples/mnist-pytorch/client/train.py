@@ -49,11 +49,13 @@ def train(
     :type lr: float
     """
 
-    x_train, y_train = load_data(data_path)
+    # x_train, y_train = load_data(data_path)
     
     # Read environment variables from Kubernetes pod
-    client_index_str, malicious, attack, inflation_factor, batch_size, epochs, lr = load_env_params()
+    client_index_str, malicious, attack, inflation_factor, batch_size, epochs, lr, data_endpoint, data_access_key, data_secret_key, data_bucket_name = load_env_params()
     out_model_path = f"/app/model_update_{client_index_str}.npz"
+
+    x_train, y_train = load_data(is_train=True)
 
     # Print for debugging
     logger.info(f"[TRAIN] client_index={client_index_str}, malicious={malicious}, attack={attack}")

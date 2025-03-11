@@ -16,6 +16,10 @@ clients:
     batch_size: 32
     epochs: 2
     lr: 0.01
+    data_endpoint: "http://"
+    data_access_key: ""
+    data_secret_key: ""
+    data_bucket_name: ""
   - id: 2
     is_malicious: true
     attack_type: "backdoor_35int"
@@ -23,5 +27,9 @@ clients:
     batch_size: 64
     epochs: 3
     lr: 0.005
+    data_endpoint: "http://"
+    data_access_key: ""
+    data_secret_key: ""
+    data_bucket_name: ""
 
 defense_type: "none"

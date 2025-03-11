@@ -7,6 +7,8 @@ from fedn.utils.helpers.helpers import save_metrics
 from data import load_data
 from model import load_parameters, save_parameters 
 import logging
+from load_environment_param import load_env_params
+
 
 # for debugging
 logger = logging.getLogger("fedn")
@@ -26,9 +28,10 @@ def validate(global_model, out_json_path='/app/validation.json', data_path=None)
     :param data_path: The path to the data file.
     :type data_path: str
     """
-    
-    x_train, y_train = load_data(data_path, is_train=True)
-    x_test, y_test = load_data(data_path, is_train=False)
+
+    x_train, y_train = load_data(is_train=True)
+    x_test, y_test = load_data(is_train=False)
+
 
     client_index = os.environ.get("CLIENT_ID", "1")
     local_model = load_parameters(f"/app/model_update_{client_index}.npz")
