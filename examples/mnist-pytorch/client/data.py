@@ -18,31 +18,36 @@ def _get_data_path():
     client_index = os.environ.get("CLIENT_ID", "1")
     remote_data_path = f"clients/{client_index}/mnist.pt"
     client_data_directory_path = "/app/data/clients"
-    os.makedirs(f"{client_data_directory_path}/{client_index}", exist_ok=True)
     partition_path = f"{client_data_directory_path}/{client_index}/mnist.pt"
-
-    return remote_data_path, partition_path
+    if os.path.isdir(f"{client_data_directory_path}/{client_index}"):
+        return remote_data_path, partition_path, True
+    else:
+        os.makedirs(f"{client_data_directory_path}/{client_index}", exist_ok=True)
+        return remote_data_path, partition_path, False
 
 def _fetch_data_partition():
     # fetch data from data_endpoint
     data_bucket_name =  str(os.environ.get("DATA_BUCKET_NAME", ""))
-    remote_data_path, partition_path = _get_data_path()
-    minio_client = Minio(
-    str(os.environ.get("DATA_ENDPOINT", "")),
-    access_key=str(os.environ.get("DATA_ACCESS_KEY", "")),
-    secret_key=str(os.environ.get("DATA_SECRET_KEY", "")),
-    secure=False
-)   
-    try:
-        minio_client.fget_object(
-            bucket_name=data_bucket_name,
-            object_name=remote_data_path,
-            file_path=partition_path
+    remote_data_path, partition_path, exists = _get_data_path()
+    if exists:
+       logger.info(f"Partition already exists: {partition_path}")
+    else: 
+        minio_client = Minio(
+        str(os.environ.get("DATA_ENDPOINT", "")),
+        access_key=str(os.environ.get("DATA_ACCESS_KEY", "")),
+        secret_key=str(os.environ.get("DATA_SECRET_KEY", "")),
+        secure=False
+    )   
+        try:
+            minio_client.fget_object(
+                bucket_name=data_bucket_name,
+                object_name=remote_data_path,
+                file_path=partition_path
 
-        )
-    except S3Error as err:
-        logger.warning(f"Failed to download partition: {err}")
-        raise 
+            )
+        except S3Error as err:
+            logger.warning(f"Failed to download partition: {err}")
+            raise 
 
     return partition_path
     

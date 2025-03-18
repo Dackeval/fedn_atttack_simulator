@@ -1,10 +1,9 @@
 import numpy as np
 from sklearn.linear_model import SGDClassifier
-from fedn.utils.helpers.helpers import get_helper, save_metadata, save_metrics
+from fedn.utils.helpers.helpers import get_helper
 import tempfile
 import os
 import io
-import collections
 import logging
 
 logger = logging.getLogger("fedn")

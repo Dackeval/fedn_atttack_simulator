@@ -2,25 +2,20 @@ from load__data import load_data
 from model import load_parameters, save_metrics
 from sklearn.metrics import log_loss, accuracy_score
 import os
-import sys
 import pandas as pd
 import numpy as np
-import json
 import logging
-from load_environment_param import load_env_params
 
 logger = logging.getLogger("fedn")
 logging.basicConfig(level=logging.INFO)
 
-def validate(global_model, out_json_path='/app/validation.json', data_path=None, malicious=False, attack=None):
+def validate(global_model, out_json_path='/app/validation.json'):
     """ Validate model.
 
-    :param in_model_path: The path to the input model.
-    :type in_model_path: str
+    :param global_model: Sent from the server.
+    :type in_model_path: model
     :param out_json_path: The path to save the output JSON to.
     :type out_json_path: str
-    :param data_path: The path to the data file.
-    :type data_path: str
     """
     # Load data
     x_train, y_train = load_data()
@@ -66,12 +61,3 @@ def validate(global_model, out_json_path='/app/validation.json', data_path=None,
     save_metrics(report, out_json_path)
     logger.info('Validation Completed!')
     return report
-
-if __name__ == "__main__":
-    # usage: python validate.py in_model_path out_json_path [data_path]
-    in_model = sys.argv[1]
-    out_json = sys.argv[2]
-    data_path = None
-    if len(sys.argv) > 3:
-        data_path = sys.argv[3]
-    validate(in_model, out_json, data_path)

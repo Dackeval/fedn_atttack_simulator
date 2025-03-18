@@ -2,13 +2,10 @@
 import os
 import sys
 import torch
-import time
 from fedn.utils.helpers.helpers import save_metrics
 from data import load_data
-from model import load_parameters, save_parameters 
+from model import load_parameters 
 import logging
-from load_environment_param import load_env_params
-
 
 # for debugging
 logger = logging.getLogger("fedn")
@@ -35,8 +32,6 @@ def validate(global_model, out_json_path='/app/validation.json', data_path=None)
 
     client_index = os.environ.get("CLIENT_ID", "1")
     local_model = load_parameters(f"/app/model_update_{client_index}.npz")
-
-    # logger.info(f"/app/model_update_{client_index}.npz") # Debugging
     
     local_model.eval()
     global_model.eval()
@@ -69,12 +64,3 @@ def validate(global_model, out_json_path='/app/validation.json', data_path=None)
     save_metrics(metrics, out_json_path)
     logger.info('Validation done.')
     return metrics
-
-if __name__ == "__main__":
-    # usage: python validate.py in_model_path out_json_path [data_path]
-    in_model = sys.argv[1]
-    out_json = sys.argv[2]
-    data_path = None
-    if len(sys.argv) > 3:
-        data_path = sys.argv[3]
-    validate(in_model, out_json, data_path)
