@@ -14,7 +14,6 @@ clients:
     attack_type: "label_flip_basic"
     inflation_factor: 2
     batch_size: 32
-    epochs: 2
     data_endpoint: "http://"
     data_access_key: ""
     data_secret_key: ""
@@ -24,7 +23,6 @@ clients:
     attack_type: "backdoor_35int"
     inflation_factor: 5
     batch_size: 64
-    epochs: 3
     data_endpoint: "http://"
     data_access_key: ""
     data_secret_key: ""

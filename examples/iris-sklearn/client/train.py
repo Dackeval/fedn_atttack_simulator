@@ -23,7 +23,7 @@ sys.path.append(os.path.abspath(dir_path))
 def train(model, out_model_path='/app/model_update.npz',  
           data_path=None,
           batch_size=32, 
-          epochs=6, 
+          epochs=20, 
           malicious=False, 
           attack=None):
     """ Complete a model update.
@@ -45,13 +45,13 @@ def train(model, out_model_path='/app/model_update.npz',
     :param lr: The learning rate to use.
     :type lr: float
     """
-    client_index_str, malicious, attack, inflation_factor, batch_size, epochs, _, _, _, _ = load_env_params()
+    client_index_str, malicious, attack, inflation_factor, batch_size, _, _, _, _ = load_env_params()
     out_model_path = f"/app/model_update_{client_index_str}.npz"
     param_path = '/var/parameter_store/param_store.json'
     logger.info(f"out_model_path={out_model_path}")
 
     logger.info(f"[TRAIN] client_index={client_index_str}, malicious={malicious}, attack={attack}")
-    logger.info(f"[TRAIN] hyperparams: epochs={epochs}, batch_size={batch_size}, inflation_factor={inflation_factor}")
+    logger.info(f"[TRAIN] hyperparams: epochs={20}, batch_size={batch_size}, inflation_factor={inflation_factor}")
 
     # load data
     x_train, y_train = load_data()
@@ -97,7 +97,7 @@ def train(model, out_model_path='/app/model_update.npz',
     metadata = {
         # num_examples are mandatory
         'num_examples': len(x_train),
-        'epochs': epochs
+        'epochs': 20 # epochs are predefined static in the model.py as 20, set through max_iter
     }
 
     # Save JSON metadata file (mandatory)

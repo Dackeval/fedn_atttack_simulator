@@ -36,11 +36,8 @@ spec:
               value: "{{ $client.attack_type }}"
             - name: BATCH_SIZE
               value: "{{ $client.batch_size | toString }}"
-            - name: EPOCHS
-              value: "{{ $client.epochs | toString }}"
             - name: INFLATION_FACTOR
               value: "{{ $client.inflation_factor | toString }}"
-            
             - name: DATA_ENDPOINT
               value: "{{ $client.data_endpoint | toString }}"
             - name: DATA_ACCESS_KEY

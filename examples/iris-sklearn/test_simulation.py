@@ -103,7 +103,7 @@ def get_valid_attack_type(prompt):
 
 def send_params_to_kubernetes_pods(COMBINER_IP, CLIENT_TOKEN, 
                                    ATTACK_TYPE, inflation_factor,
-                                   BATCH_SIZE, EPOCHS,
+                                   BATCH_SIZE,
                                    DEFENSE_TYPE, BENIGN_CLIENTS, MALICIOUS_CLIENTS,
                                    DATA_ENDPOINT, DATA_ACCESS_KEY, 
                                    DATA_SECRET_KEY, DATA_BUCKET_NAME
@@ -119,7 +119,6 @@ def send_params_to_kubernetes_pods(COMBINER_IP, CLIENT_TOKEN,
                 "is_malicious": False,
                 "attack_type": ATTACK_TYPE,
                 "batch_size": BATCH_SIZE,
-                "epochs": EPOCHS,
                 "inflation_factor": inflation_factor,
                 "data_endpoint": DATA_ENDPOINT,
                 "data_access_key": DATA_ACCESS_KEY,
@@ -135,7 +134,6 @@ def send_params_to_kubernetes_pods(COMBINER_IP, CLIENT_TOKEN,
                 "is_malicious": True,
                 "attack_type": ATTACK_TYPE,
                 "batch_size": BATCH_SIZE,
-                "epochs": EPOCHS,
                 "inflation_factor": inflation_factor,
                 "data_endpoint": DATA_ENDPOINT,
                 "data_access_key": DATA_ACCESS_KEY,
@@ -182,9 +180,6 @@ if ATTACK_TYPE == "grad_boost_basic":
 
 BATCH_SIZE = get_valid_int("Enter batch size (integer): ")
 print(f"Batch size: {BATCH_SIZE} is set\n")
-
-EPOCHS = get_valid_int("Enter number of epochs (integer): ")
-print(f"Epochs: {EPOCHS} is set\n")
 
 DEFENSE_TYPE = input("Enter defense type: ")
 print(f"Defense type: {DEFENSE_TYPE} is set\n")
@@ -253,7 +248,7 @@ except Exception as e:
 
 send_params_to_kubernetes_pods(
   COMBINER_IP, CLIENT_TOKEN, ATTACK_TYPE, inflation_factor,
-  BATCH_SIZE, EPOCHS, DEFENSE_TYPE,
+  BATCH_SIZE, DEFENSE_TYPE,
   BENIGN_CLIENTS, MALICIOUS_CLIENTS, DATA_ENDPOINT, 
   DATA_ACCESS_KEY, DATA_SECRET_KEY, DATA_BUCKET_NAME)
 
