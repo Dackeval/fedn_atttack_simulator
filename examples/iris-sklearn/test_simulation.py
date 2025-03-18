@@ -214,7 +214,7 @@ print(f"Data bucket name is set: '{DATA_BUCKET_NAME}'")
 # SPLIT DATA
 # ------------------------------
 total_clients = BENIGN_CLIENTS + MALICIOUS_CLIENTS
-sd(total_clients, DATA_ENDPOINT, DATA_ACCESS_KEY, DATA_SECRET_KEY, DATA_BUCKET_NAME)
+#sd(total_clients, DATA_ENDPOINT, DATA_ACCESS_KEY, DATA_SECRET_KEY, DATA_BUCKET_NAME)
 
 # UPLOAD PACKAGE AND SEED MODEL
 # ------------------------------
