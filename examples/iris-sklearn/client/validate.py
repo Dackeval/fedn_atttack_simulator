@@ -7,6 +7,7 @@ import pandas as pd
 import numpy as np
 import json
 import logging
+from load_environment_param import load_env_params
 
 logger = logging.getLogger("fedn")
 logging.basicConfig(level=logging.INFO)
@@ -22,15 +23,15 @@ def validate(global_model, out_json_path='/app/validation.json', data_path=None,
     :type data_path: str
     """
     # Load data
-    x_train, y_train = load_data(data_path)
-    x_test, y_test = load_data(data_path, is_train=False)
+    x_train, y_train = load_data()
+    x_test, y_test = load_data(is_train=False)
     x_train = pd.DataFrame(x_train)
     y_train = pd.DataFrame(y_train)
     x_test = pd.DataFrame(x_test)
     y_test = pd.DataFrame(y_test)
 
     # load the local model for train acc and loss
-    client_index = os.environ.get("CLIENT_INDEX", "1")
+    client_index = os.environ.get("CLIENT_ID", "1")
     local_model = load_parameters(f"/app/model_update_{client_index}.npz")
     logger.info(f"/app/model_update_{client_index}.npz")
 

@@ -1,5 +1,5 @@
 {
-    "ben_count": 1,
+    "ben_count": 3,
     "mal_count": 1,
     "attack_type": "label_flip_basic",
     "defence_type": "none",
@@ -16,6 +16,14 @@
         },
         {
             "client_id": 2,
+            "is_malicious": false
+        },
+        {
+            "client_id": 3,
+            "is_malicious": false
+        },
+        {
+            "client_id": 4,
             "is_malicious": true,
             "attack_type": "label_flip_basic",
             "inflation_factor": 1

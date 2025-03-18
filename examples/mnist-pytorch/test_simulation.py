@@ -227,7 +227,7 @@ ps.create_parameter_store(BENIGN_CLIENTS, MALICIOUS_CLIENTS, ATTACK_TYPE,
 # SPLIT DATA
 # ------------------------------
 total_clients = BENIGN_CLIENTS + MALICIOUS_CLIENTS
-#sd(total_clients, DATA_ENDPOINT, DATA_ACCESS_KEY, DATA_SECRET_KEY, DATA_BUCKET_NAME)
+sd(total_clients, DATA_ENDPOINT, DATA_ACCESS_KEY, DATA_SECRET_KEY, DATA_BUCKET_NAME)
 
 # UPLOAD PACKAGE AND SEED MODEL
 # ------------------------------

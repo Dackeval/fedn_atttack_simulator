@@ -7,6 +7,8 @@ import json
 from load__data import load_data
 from fedn.utils.helpers.helpers import get_helper, save_metadata, save_metrics
 import logging
+from load_environment_param import load_env_params
+
 
 HELPER_MODULE = 'numpyhelper'
 helper = get_helper(HELPER_MODULE)
@@ -19,7 +21,11 @@ sys.path.append(os.path.abspath(dir_path))
 
 
 def train(model, out_model_path='/app/model_update.npz',  
-          data_path=None,batch_size=32, epochs=6, malicious=False, attack=None):
+          data_path=None,
+          batch_size=32, 
+          epochs=6, 
+          malicious=False, 
+          attack=None):
     """ Complete a model update.
 
     Load model paramters from in_model_path (managed by the FEDn client),
@@ -39,57 +45,16 @@ def train(model, out_model_path='/app/model_update.npz',
     :param lr: The learning rate to use.
     :type lr: float
     """
-    client_index_str = os.environ.get("CLIENT_INDEX", "1")
+    client_index_str, malicious, attack, inflation_factor, batch_size, epochs, _, _, _, _ = load_env_params()
     out_model_path = f"/app/model_update_{client_index_str}.npz"
     param_path = '/var/parameter_store/param_store.json'
     logger.info(f"out_model_path={out_model_path}")
 
-    # Check if container sets MALICIOUS=true
-    env_malicious_flag = os.environ.get("MALICIOUS", "false").strip().lower()
-    # Convert to boolean
-    env_malicious = (env_malicious_flag == "true")
-
-    logger.info(f"env_malicious_flag={env_malicious_flag}, env_malicious={env_malicious}, client_index_str={client_index_str}")
-    if client_index_str is None:
-        # Default to 0 if none
-        logger.warning("No CLIENT_INDEX found, defaulting to 0 (benign).")
-        client_index = 0
-    else:
-        client_index = int(client_index_str)
-
-    if os.path.isfile(param_path):
-        with open(param_path, 'r') as f:
-            store = json.load(f)
-        # find the right client in the parameter store
-        client_conf = next(
-            (c for c in store.get("clients", []) if c["client_id"] == client_index),
-            None
-        )
-        # load parameters from the parameter store
-        if client_conf:
-            param_store_malicious = client_conf.get("is_malicious", False)
-            malicious = env_malicious or param_store_malicious
-            if malicious:
-                attack = client_conf.get("attack_type", "none")
-                inflation_factor = client_conf.get("inflation_factor", 1)
-            else:
-                attack = "none"
-                inflation_factor = 1
-            # load hyperparameters from the parameter store
-            batch_size = store.get("batch_size", batch_size)
-            epochs     = store.get("epochs", epochs)
-        else:
-            logger.warning(f"No client entry found for client_id={client_index}. Using defaults.")
-            inflation_factor = 1
-    else:
-        logger.warning("No param_store.json found! Using all defaults.")
-        inflation_factor = 1
-
-    logger.info(f"[TRAIN] client_index={client_index}, malicious={malicious}, attack={attack}")
+    logger.info(f"[TRAIN] client_index={client_index_str}, malicious={malicious}, attack={attack}")
     logger.info(f"[TRAIN] hyperparams: epochs={epochs}, batch_size={batch_size}, inflation_factor={inflation_factor}")
 
     # load data
-    x_train, y_train = load_data(data_path)
+    x_train, y_train = load_data()
     x_train = np.array(x_train)
     y_train = np.array(y_train)
 

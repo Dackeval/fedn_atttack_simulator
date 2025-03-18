@@ -1,5 +1,5 @@
 image:
-  repository: dackevall/mnist-pytorch
+  repository: dackevall/iris-sklearn
   tag: latest
 combinerIP: ""
 clientToken: ""
@@ -15,7 +15,6 @@ clients:
     inflation_factor: 2
     batch_size: 32
     epochs: 2
-    lr: 0.01
     data_endpoint: "http://"
     data_access_key: ""
     data_secret_key: ""
@@ -26,7 +25,6 @@ clients:
     inflation_factor: 5
     batch_size: 64
     epochs: 3
-    lr: 0.005
     data_endpoint: "http://"
     data_access_key: ""
     data_secret_key: ""

@@ -1,0 +1,58 @@
+{{- range $client := .Values.clients }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: client-{{ $client.id }}
+  labels:
+    app: "iris-client"
+    client-id: "{{ $client.id }}"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: "iris-client"
+      client-id: "{{ $client.id }}"
+  template:
+    metadata:
+      labels:
+        app: "iris-client"
+        client-id: "{{ $client.id }}"
+    spec:
+      containers:
+        - name: client-{{ $client.id }}
+          image: "{{ $.Values.image.repository }}:{{ $.Values.image.tag }}"
+          env:
+            - name: COMBINER_IP
+              value: "{{ $.Values.combinerIP }}"
+            - name: CLIENT_TOKEN
+              value: "{{ $.Values.clientToken }}"
+
+            - name: CLIENT_ID
+              value: "{{ $client.id | toString }}"
+            - name: MALICIOUS
+              value: "{{ $client.is_malicious | toJson }}"
+            - name: ATTACK_TYPE
+              value: "{{ $client.attack_type }}"
+            - name: BATCH_SIZE
+              value: "{{ $client.batch_size | toString }}"
+            - name: EPOCHS
+              value: "{{ $client.epochs | toString }}"
+            - name: INFLATION_FACTOR
+              value: "{{ $client.inflation_factor | toString }}"
+            
+            - name: DATA_ENDPOINT
+              value: "{{ $client.data_endpoint | toString }}"
+            - name: DATA_ACCESS_KEY
+              value: "{{ $client.data_access_key | toString }}"
+            - name: DATA_SECRET_KEY
+              value: "{{ $client.data_secret_key | toString }}"
+            - name: DATA_BUCKET_NAME
+              value: "{{ $client.data_bucket_name | toString }}"
+
+          args:
+            - "--api-url"
+            - "{{ $.Values.combinerIP }}"
+            - "--token"
+            - "{{ $.Values.clientToken }}"
+{{- end }}

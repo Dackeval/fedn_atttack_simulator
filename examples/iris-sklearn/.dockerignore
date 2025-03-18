@@ -1,4 +1,16 @@
-data
+# .dockerignore
+.git
+.vscode
+__pycache__/
+#data/
+#parameter_store/
+data/test
+data/train
+*.pyc
+test_simulation.py
+bin/
 seed.npz
 *.tgz
 *.tar.gz
+analytics/
+values-temp.yaml

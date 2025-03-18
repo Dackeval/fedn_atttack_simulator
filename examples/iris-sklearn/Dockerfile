@@ -2,17 +2,16 @@ FROM python:3.12.7-slim
 
 WORKDIR /app
 
+# Copy only what you need
 COPY requirements.txt .
+RUN apt-get update && apt-get install --no-install-recommends -y git gcc python3-dev && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-RUN apt-get update \
-    && apt-get install --no-install-recommends -y git gcc python3-dev \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install everything from requirements.txt and the FEDn package
+# Install python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . /app
+# Copy the client code only
+COPY client /app/client
+#COPY parameter_store /app/parameter_store
+#COPY data /app/data
 
-WORKDIR /app
-ENTRYPOINT ["python", "-u", "/app/client/docker_client.py"]
+ENTRYPOINT ["python", "/app/client/docker_client.py"]

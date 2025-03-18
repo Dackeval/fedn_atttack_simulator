@@ -13,3 +13,4 @@ seed.npz
 *.tgz
 *.tar.gz
 analytics/
+values-temp.yaml
