@@ -27,6 +27,12 @@ spec:
               value: "{{ $.Values.combinerIP }}"
             - name: CLIENT_TOKEN
               value: "{{ $.Values.clientToken }}"
+            - name: ROUND_NUM
+              value: "{{ $.Values.round_num }}"
+            - name: MALICIOUS_CLIENTS
+              value: "{{ $.Values.malicious.replicas | toString }}"
+            - name: BENIGN_CLIENTS
+              value: "{{ $.Values.benign.replicas | toString }}"
 
             - name: CLIENT_ID
               value: "{{ $client.id | toString }}"
@@ -42,7 +48,6 @@ spec:
               value: "{{ $client.epochs | toString }}"
             - name: INFLATION_FACTOR
               value: "{{ $client.inflation_factor | toString }}"
-            
             - name: DATA_ENDPOINT
               value: "{{ $client.data_endpoint | toString }}"
             - name: DATA_ACCESS_KEY

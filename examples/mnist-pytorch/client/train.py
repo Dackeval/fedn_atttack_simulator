@@ -7,7 +7,7 @@ import json
 import logging
 from fedn.utils.helpers.helpers import save_metadata, get_helper
 from data import load_data
-from model import save_parameters, compile_model
+from model import save_parameters, compile_model, load_parameters
 from load_environment_param import load_env_params
 from attacks import *
 
@@ -28,6 +28,11 @@ def train(model):
     to out_model_path and sends to docker_client.py.
 
     """
+    # to keep track of the round number for LIE attack
+    round_num = int(os.getenv("round_num", "0"))
+    round_num += 1
+    os.environ["round_num"] = str(int(os.environ.get("round_num", "0")) + 1)
+    logger.info(f"Round number is {round_num}")
     # Read environment variables from Kubernetes pod
     client_index_str, malicious, attack, inflation_factor, batch_size, epochs, lr, _, _, _, _ = load_env_params()
     out_model_path = f"/app/model_update_{client_index_str}.npz"
@@ -57,34 +62,36 @@ def train(model):
             case _:
                 logger.info("DO NOTHING!")
 
-    if attack == 'little_is_enough':
+    if attack == 'little_is_enough' and malicious:
         logger.info("This client is running a LIE attack!")
         pull_factor = 2
-        with open('/var/parameter_store/client_counts.json', 'r') as json_file:
-            counts = json.load(json_file)
-            ben_count = counts['ben_count']
-            mal_count = counts['mal_count']
+        ben_count = int(os.environ.get('BENIGN_CLIENTS', 0))
+        mal_count = int(os.environ.get('MALICIOUS_CLIENTS', 0))
+        if mal_count > 0:
             mal_power = int(ben_count / mal_count)
-            logger.info(f"Malicious pull is {mal_power}")
+        else:
+            mal_power = 1
+        logger.info(f"Malicious pull is {mal_power}")
+        if (round_num >= 1 and ( round_num - 2 ) % 3 == 0 ):
+            save_parameters(model, "/app/model_t-2.npz")
+            logger.info("Saved the model from 3 rounds ago")
 
-        model_ids = [int(x.split(sep='.')[0]) for x in os.listdir("/var/parameter_store/models/")]
-        model_count = len(model_ids)
-        logger.info(f"Model count is: {model_count}")
-        if (model_count != 0 and model_count % 3 == 0):
-            latest_model_parameters_np = helper.load(f"/var/parameter_store/models/{model_ids[model_count - 1]}.npz")
-            reference_model_parameters_np = helper.load(f"/var/parameter_store/models/{model_ids[model_count - 3]}.npz")
+        if (round_num != 0 and round_num % 3 == 0):
+            # load the global model from 3 rounds ago
+            global_model_parameters_t_2 = helper.load("/app/model_t-2.npz")
+            global_model_parameters_t = [val.cpu().numpy() for _, val in model.state_dict().items()]
+            
             updated_model_parameters_np = []
-
-            for i in range(len(reference_model_parameters_np)):
-                updated_model_parameters_np.append(reference_model_parameters_np[i] - pull_factor * mal_power * (latest_model_parameters_np[i] - reference_model_parameters_np[i]))
+            for i in range(len(global_model_parameters_t)):
+                updated_model_parameters_np.append(global_model_parameters_t[i] - pull_factor * mal_power * (global_model_parameters_t_2[i] - global_model_parameters_t[i]))
             
             model = compile_model()
-
             params_dict = zip(model.state_dict().keys(), updated_model_parameters_np)
             state_dict = collections.OrderedDict({key: torch.tensor(x) for key, x in params_dict})
             model.load_state_dict(state_dict, strict=True)
+
         else:
-            logger.info(f"But not running the attack in this round since it is round no: {model_count}")
+            logger.info(f"But not running the attack in this round since it is round no: {round_num}")
             # Train
             optimizer = torch.optim.SGD(model.parameters(), lr=lr)
             n_batches = int(math.ceil(len(x_train) / batch_size))
@@ -150,3 +157,5 @@ def train(model):
 
     logger.info('Train Completed!')
     return metadata, model
+
+
