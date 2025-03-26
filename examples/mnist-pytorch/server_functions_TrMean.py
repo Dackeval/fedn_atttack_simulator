@@ -64,16 +64,15 @@ class ServerFunctions(ServerFunctionsBase):
                 # sort by the parameter values
                 pairs.sort(key=lambda x: x[0])
 
-                # number of params to trim from each side
                 trim_amount = int(trimming_fraction * num_clients)
-                # to not trim more than half of the params on each side
-                trim_amount = min(trim_amount, num_clients // 2)
+                max_trim = (num_clients - 1) // 2  # ensures at least 1 remains
+                trim_amount = min(trim_amount, max_trim)
 
-                # fall back if too many params are trimmed
                 if trim_amount * 2 >= num_clients:
+                    # If even after min() it's too big, skip trimming
                     trimmed_pairs = pairs
                 else:
-                    trimmed_pairs = pairs[trim_amount: -trim_amount]
+                    trimmed_pairs = pairs[trim_amount : -trim_amount]
 
                 # fedavg on the remaining 
                 total_weight = sum(w for _, w in trimmed_pairs)

@@ -72,7 +72,7 @@ def send_params_to_kubernetes_pods(helper_tuple):
     subprocess.run(helm_cmd, check=True)
     print("Clients deployed with user-supplied config!")
 
-    time.sleep(90)
+    time.sleep(20)
     print("Starting simulation...")
 
     if DEFENSE_TYPE == "dnc":
