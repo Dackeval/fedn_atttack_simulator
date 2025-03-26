@@ -27,6 +27,8 @@ spec:
               value: "{{ $.Values.combinerIP }}"
             - name: CLIENT_TOKEN
               value: "{{ $.Values.clientToken }}"
+            - name: AUTH_TOKEN
+              value: "{{ $.Values.authToken }}"
             - name: ROUND_NUM
               value: "{{ $.Values.round_num }}"
             - name: MALICIOUS_CLIENTS

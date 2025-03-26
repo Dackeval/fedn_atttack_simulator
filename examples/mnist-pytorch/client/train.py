@@ -10,6 +10,8 @@ from data import load_data
 from model import save_parameters, compile_model, load_parameters
 from load_environment_param import load_env_params
 from attacks import *
+from fedn import APIClient
+
 
 logger = logging.getLogger("fedn")
 logging.basicConfig(level=logging.INFO)
@@ -29,9 +31,7 @@ def train(model):
 
     """
     # to keep track of the round number for LIE attack
-    round_num = int(os.getenv("round_num", "0"))
-    round_num += 1
-    os.environ["round_num"] = str(int(os.environ.get("round_num", "0")) + 1)
+    round_num = fetch_latest_round()
     logger.info(f"Round number is {round_num}")
     # Read environment variables from Kubernetes pod
     client_index_str, malicious, attack, inflation_factor, batch_size, epochs, lr, _, _, _, _ = load_env_params()
@@ -159,3 +159,22 @@ def train(model):
     return metadata, model
 
 
+def fetch_latest_round():
+    """Fetch the latest round count using the FEDn APIClient."""
+    COMBINER_IP = str(os.getenv("COMBINER_IP", ""))
+    DISCOVER_HOST = COMBINER_IP.removeprefix('https://')
+
+    # # Get authentication token
+    AUTH_TOKEN = str(os.getenv("AUTH_TOKEN", ""))
+    os.environ["FEDN_AUTH_TOKEN"] = AUTH_TOKEN
+
+    logger.info(f"COMBINER_IP: {COMBINER_IP}")
+    logger.info(f"AUTH_TOKEN: {AUTH_TOKEN}")
+    # Initialize API client
+    client = APIClient(host=DISCOVER_HOST, secure=True, verify=True)
+
+    # Fetch round count
+    rounds_count = client.get_rounds_count()
+    logger.info(f"Total Rounds: {rounds_count}")
+
+    return int(rounds_count)

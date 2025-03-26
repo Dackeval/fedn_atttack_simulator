@@ -1,7 +1,7 @@
 from fedn import APIClient
 import os
 from bin.split_data import split as sd
-
+from server_functions_fedavg import ServerFunctions
 
 def get_valid_int(prompt):
     """
@@ -50,6 +50,28 @@ def get_valid_attack_type(prompt):
                 print("  -", t)
             print()
 
+def get_valid_mitigation_type(prompt):
+    """
+    prompt for a valid attack type until valid
+    """
+    valid_types = [
+        "dnc"
+        "krum",
+        "multi-krum",
+        "trmean",
+        "exploration-exploitation"
+    ]
+    while True:
+        mitigation_type = input(prompt).strip()
+        if mitigation_type in valid_types:
+            return mitigation_type
+        else:
+            print("Invalid attack type. Please choose from:")
+            for t in valid_types:
+                print("  -", t)
+            print()
+
+
 def helper():
     # Simulator parameter inputs
     # ----------------------------
@@ -76,7 +98,7 @@ def helper():
     LEARNING_RATE = get_valid_float("Enter learning rate (float): ")
     print(f"Learning rate: {LEARNING_RATE} is set\n")
 
-    DEFENSE_TYPE = input("Enter defense type: ")
+    DEFENSE_TYPE = get_valid_mitigation_type("Enter defense type: ")
     print(f"Defense type: {DEFENSE_TYPE} is set\n")
 
     BENIGN_CLIENTS = get_valid_int("Enter number of benign clients (integer): ")
@@ -106,9 +128,10 @@ def helper():
 
     # UPLOAD PACKAGE AND SEED MODEL
     # ------------------------------
-    send_seed_and_package(COMBINER_IP)
+    AUTH_TOKEN, client = send_seed_and_package(COMBINER_IP)
+    #set_server_function(COMBINER_IP, AUTH_TOKEN, client)
 
-    return (COMBINER_IP, CLIENT_TOKEN, ATTACK_TYPE, inflation_factor, BATCH_SIZE, EPOCHS, LEARNING_RATE, DEFENSE_TYPE, BENIGN_CLIENTS, MALICIOUS_CLIENTS, DATA_ENDPOINT, DATA_ACCESS_KEY, DATA_SECRET_KEY, DATA_BUCKET_NAME)
+    return (COMBINER_IP, CLIENT_TOKEN, ATTACK_TYPE, inflation_factor, BATCH_SIZE, EPOCHS, LEARNING_RATE, DEFENSE_TYPE, BENIGN_CLIENTS, MALICIOUS_CLIENTS, DATA_ENDPOINT, DATA_ACCESS_KEY, DATA_SECRET_KEY, DATA_BUCKET_NAME, AUTH_TOKEN, client)
 
 
 def send_seed_and_package(COMBINER_IP):
@@ -143,5 +166,9 @@ def send_seed_and_package(COMBINER_IP):
         client.set_active_package('./client/package.tgz', 'numpyhelper', package_name)
         print(f"API Client connected to combiner at: {DISCOVER_HOST}")
 
+    return auth_token, client
 
+# def set_server_function(client):
 
+#     client.start_session(server_functions=ServerFunctions)
+    

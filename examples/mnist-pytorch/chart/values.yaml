@@ -3,6 +3,7 @@ image:
   tag: latest
 combinerIP: ""
 clientToken: ""
+authToken: ""
 benign:
   replicas: 1
 malicious:

@@ -1,11 +1,18 @@
 import subprocess
 import yaml
 from helper_simulation import helper
+from fedn import APIClient
+import time
+import os
 
-
+from server_functions_DNC import ServerFunctions as DNC
+from server_functions_KRUM import ServerFunctions as KRUM
+from server_functions_Multi_KRUM import ServerFunctions as Multi_KRUM
+from server_functions_TrMean import ServerFunctions as TrMean
+from server_functions_fedavg import ServerFunctions as FedAvg
 
 def send_params_to_kubernetes_pods(helper_tuple):
-    COMBINER_IP, CLIENT_TOKEN, ATTACK_TYPE, inflation_factor, BATCH_SIZE, EPOCHS, LEARNING_RATE, DEFENSE_TYPE, BENIGN_CLIENTS, MALICIOUS_CLIENTS,DATA_ENDPOINT, DATA_ACCESS_KEY, DATA_SECRET_KEY, DATA_BUCKET_NAME= helper_tuple[0], helper_tuple[1], helper_tuple[2], helper_tuple[3], helper_tuple[4], helper_tuple[5], helper_tuple[6], helper_tuple[7], helper_tuple[8], helper_tuple[9], helper_tuple[10], helper_tuple[11], helper_tuple[12], helper_tuple[13]
+    COMBINER_IP, CLIENT_TOKEN, ATTACK_TYPE, inflation_factor, BATCH_SIZE, EPOCHS, LEARNING_RATE, DEFENSE_TYPE, BENIGN_CLIENTS, MALICIOUS_CLIENTS,DATA_ENDPOINT, DATA_ACCESS_KEY, DATA_SECRET_KEY, DATA_BUCKET_NAME, AUTH_TOKEN, client = helper_tuple[0], helper_tuple[1], helper_tuple[2], helper_tuple[3], helper_tuple[4], helper_tuple[5], helper_tuple[6], helper_tuple[7], helper_tuple[8], helper_tuple[9], helper_tuple[10], helper_tuple[11], helper_tuple[12], helper_tuple[13], helper_tuple[14], helper_tuple[15]
     
     total_clients = BENIGN_CLIENTS + MALICIOUS_CLIENTS
     client_list = []
@@ -53,6 +60,7 @@ def send_params_to_kubernetes_pods(helper_tuple):
     values["clients"] = client_list
     values["benign"]["replicas"] = BENIGN_CLIENTS
     values["malicious"]["replicas"] = MALICIOUS_CLIENTS
+    values["authToken"] = AUTH_TOKEN
 
     with open("values-temp.yaml", "w") as f:
         yaml.safe_dump(values, f)
@@ -64,6 +72,26 @@ def send_params_to_kubernetes_pods(helper_tuple):
     subprocess.run(helm_cmd, check=True)
     print("Clients deployed with user-supplied config!")
 
+    time.sleep(90)
+    print("Starting simulation...")
+
+    if DEFENSE_TYPE == "dnc":
+        ServerFunctions = DNC
+    elif DEFENSE_TYPE == "krum":
+        ServerFunctions = KRUM
+    elif DEFENSE_TYPE == "multi-krum":
+        ServerFunctions = Multi_KRUM
+    elif DEFENSE_TYPE == "trmean":
+        ServerFunctions = TrMean
+    elif DEFENSE_TYPE == "fedavg":
+        ServerFunctions = FedAvg
+
+    client.start_session(server_functions=ServerFunctions, round_timeout=500, rounds=10)
+    print("Simulation started!")
+
 
 send_params_to_kubernetes_pods(helper())
+
+
+
 
