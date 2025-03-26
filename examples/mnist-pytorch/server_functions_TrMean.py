@@ -18,51 +18,92 @@ class ServerFunctions(ServerFunctionsBase):
         return {"learning_rate": self.lr}
 
     def aggregate(self, previous_global: List[np.ndarray], client_updates: Dict[str, Tuple[List[np.ndarray], dict]]) -> List[np.ndarray]:
-        # Trimming Mean aggregation
+        
+        # trimming factor and number of clients for TrMean
         trimming_fraction = 0.1
         num_clients = len(client_updates)
-        # if there are less than 3 clients, run FedAvg
-        if num_clients < 3:  
-            logger.info("Not enough clients for TrMean. Need > 2.")
-            # for FedAvg aggregation part of TrMean
-            weighted_sum = [np.zeros_like(param) for param in previous_global]
-            total_weight = 0
-            # run fedavg on the trimmed list x_agg
+
+        # if lezs than 3 fallback to FedAvg
+        if num_clients < 3:
+            logger.info("Not enough clients for TrMean (need >=3). Falling back to FedAvg.")
+            return self.fedavg(previous_global, client_updates)
+
+        # coordinate-wise TrMean for each layer
+        new_global = []
+        for layer_idx in range(len(previous_global)):
+            # gather all parameters for each layer + their sample counts
+            layer_params = []
+            sample_counts = []
             for client_id, (client_parameters, metadata) in client_updates.items():
-                num_examples = metadata.get("num_examples", 1)
-                total_weight += num_examples
-                for i, param in enumerate(client_parameters):
-                    weighted_sum[i] += param * num_examples
-            logger.info("Models aggregated")
-            return [param / total_weight for param in weighted_sum]
-        # else run TrMean
-        else:
-            # Trimming Mean aggregation
-            x_agg = []
-            for dimension_i in range(len(previous_global)):
-                param_list = []
-                for client_id, (client_parameters, metadata) in client_updates.items():
-                    param_dim_i = client_parameters[dimension_i] 
-                    num_examples = metadata["num_examples"]  
-                    param_list.append((param_dim_i, num_examples)) 
-                # sort using the first element of the tuple
-                sorted_param_list = sorted(param_list, key=lambda x: x[0])  # Sort by parameter value
+                w = metadata.get("num_examples", 1)
+                sample_counts.append(float(w))
 
-                trim_size = int( 2 * trimming_fraction * num_clients ) # 2 for upper and lower bounds
-                trim_size = max(trim_size, 1) 
+                # stack the parameters in layer_params per client
+                layer_params.append(client_parameters[layer_idx])
 
-                # remove lower bound and upper bound, spceifies start and end of the slice
-                trimmed_param_list = sorted_param_list[trim_size:-trim_size]
-                
-                # run FedAvg on the trimmed list and append to x_agg
-                tr_param_array = np.array([param for param, _ in trimmed_param_list])
-                tr_num_samples = np.array([num_samples for _, num_samples in trimmed_param_list])
-                
-                # weighted sum of the parameters
-                fed_avg_dim_i = np.sum(tr_param_array * tr_num_samples[:, np.newaxis], axis=0) / np.sum(tr_num_samples)
-                x_agg.append(fed_avg_dim_i)
-            
-            return x_agg
+            # reshape from (num_clients, (M,N)) to (num_clients, M, N) for easier manipulation 
+            # or (num_clients, D) for a vector, or (num_clients,) for a scalar/bias
+            stacked = np.stack(layer_params, axis=0)
+            # for reshaping back later.
+            original_shape = stacked.shape[1:] 
+            # reshape to (num_client, N*M) 
+            flattened = stacked.reshape(num_clients, -1)  
+            sample_counts = np.array(sample_counts)       # (num_clients,) to match with parameters
 
+            # We'll build a new array for the aggregated layer in flat form
+            aggregated_flat = np.zeros(flattened.shape[1], dtype=flattened.dtype)
 
-                
+            # looping over each coordinate ie layer
+            for col_idx in range(flattened.shape[1]):
+                # values is the params for the current clients 
+                values = flattened[:, col_idx]  
+
+                # Pair them with sample counts, e.g. [(params, num_examples), ...]
+                pairs = list(zip(values, sample_counts))
+
+                # sort by the parameter values
+                pairs.sort(key=lambda x: x[0])
+
+                # number of params to trim from each side
+                trim_amount = int(trimming_fraction * num_clients)
+                # to not trim more than half of the params on each side
+                trim_amount = min(trim_amount, num_clients // 2)
+
+                # fall back if too many params are trimmed
+                if trim_amount * 2 >= num_clients:
+                    trimmed_pairs = pairs
+                else:
+                    trimmed_pairs = pairs[trim_amount: -trim_amount]
+
+                # fedavg on the remaining 
+                total_weight = sum(w for _, w in trimmed_pairs)
+                if total_weight == 0:
+                    # fallback to mean if total num_examples is zero
+                    aggregated_value = np.mean([val for val, _ in trimmed_pairs])
+                else:
+                    weighted_sum = sum(val * w for val, w in trimmed_pairs)
+                    aggregated_value = weighted_sum / total_weight
+
+                aggregated_flat[col_idx] = aggregated_value
+
+            # reshape back to the original layer shape (e.g. (M, N))
+            new_layer = aggregated_flat.reshape(original_shape)
+            new_global.append(new_layer)
+
+        return new_global
+
+    def fedavg(self, previous_global: List[np.ndarray], client_updates: Dict[str, Tuple[List[np.ndarray], dict]]) -> List[np.ndarray]:
+        """ Fallback FedAvg aggregator, used when not enough clients for TrMean. """
+        weighted_sum = [np.zeros_like(param) for param in previous_global]
+        total_weight = 0.0
+        for client_id, (params, metadata) in client_updates.items():
+            w = metadata.get("num_examples", 1)
+            total_weight += w
+            for i, p in enumerate(params):
+                weighted_sum[i] += p * w
+
+        if total_weight == 0:
+            # fallback to previous global if no clients reported any examples
+            return previous_global
+
+        return [p / total_weight for p in weighted_sum]
