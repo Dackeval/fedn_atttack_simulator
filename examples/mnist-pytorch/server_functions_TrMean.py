@@ -66,8 +66,8 @@ class ServerFunctions(ServerFunctionsBase):
 
                 trim_amount = int(trimming_fraction * num_clients)
                 max_trim = (num_clients - 1) // 2  # ensures at least 1 remains
-                trim_amount = min(trim_amount, max_trim)
-
+                trim_amount = max(1, min(trim_amount, max_trim))
+                
                 if trim_amount * 2 >= num_clients:
                     # If even after min() it's too big, skip trimming
                     trimmed_pairs = pairs
@@ -106,3 +106,5 @@ class ServerFunctions(ServerFunctionsBase):
             return previous_global
 
         return [p / total_weight for p in weighted_sum]
+    
+
