@@ -55,7 +55,7 @@ def get_valid_mitigation_type(prompt):
     prompt for a valid attack type until valid
     """
     valid_types = [
-        "dnc"
+        "dnc",
         "krum",
         "multi-krum",
         "trmean",
