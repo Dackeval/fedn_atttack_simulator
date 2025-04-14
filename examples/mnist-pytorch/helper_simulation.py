@@ -59,7 +59,8 @@ def get_valid_mitigation_type(prompt):
         "krum",
         "multi-krum",
         "trmean",
-        "exploration-exploitation"
+        "exploration-exploitation",
+        "fedavg"
     ]
     while True:
         mitigation_type = input(prompt).strip()
@@ -118,20 +119,39 @@ def helper():
 
     DATA_BUCKET_NAME = input("Enter the data bucket name: ")
     print(f"Data bucket name is set: '{DATA_BUCKET_NAME}'")
+
+    IID = input("Is the data IID? (y/n): ")
+    if IID == "y":
+        IID = "iid"
+    elif IID == "n":
+        IID = "noniid"
+    else:
+        print("Invalid input. Defaulting to IID.")
+        IID = "iid"
+    
+    BALANCED = input("Is the data balanced? (y/n): ")
+    if BALANCED == "y":
+        BALANCED = "balanced"
+    elif BALANCED == "n":
+        BALANCED = "unbalanced"
+    else:
+        print("Invalid input. Defaulting to balanced.")
+        BALANCED = "balanced"
+    
     
     # SPLIT DATA
     # ------------------------------
     total_clients = BENIGN_CLIENTS + MALICIOUS_CLIENTS
     pushfetch_or_fetch = input("Do you want to split, push and fetch data partitions or only fetch the data partitions remotely? (push/fetch): ")
     if pushfetch_or_fetch == "push":
-        sd(total_clients, DATA_ENDPOINT, DATA_ACCESS_KEY, DATA_SECRET_KEY, DATA_BUCKET_NAME)
+        sd(total_clients, DATA_ENDPOINT, DATA_ACCESS_KEY, DATA_SECRET_KEY, DATA_BUCKET_NAME, IID, BALANCED)
 
     # UPLOAD PACKAGE AND SEED MODEL
     # ------------------------------
     AUTH_TOKEN, client = send_seed_and_package(COMBINER_IP)
     #set_server_function(COMBINER_IP, AUTH_TOKEN, client)
 
-    return (COMBINER_IP, CLIENT_TOKEN, ATTACK_TYPE, inflation_factor, BATCH_SIZE, EPOCHS, LEARNING_RATE, DEFENSE_TYPE, BENIGN_CLIENTS, MALICIOUS_CLIENTS, DATA_ENDPOINT, DATA_ACCESS_KEY, DATA_SECRET_KEY, DATA_BUCKET_NAME, AUTH_TOKEN, client)
+    return (COMBINER_IP, CLIENT_TOKEN, ATTACK_TYPE, inflation_factor, BATCH_SIZE, EPOCHS, LEARNING_RATE, DEFENSE_TYPE, BENIGN_CLIENTS, MALICIOUS_CLIENTS, DATA_ENDPOINT, DATA_ACCESS_KEY, DATA_SECRET_KEY, DATA_BUCKET_NAME, AUTH_TOKEN, client, IID, BALANCED)
 
 
 def send_seed_and_package(COMBINER_IP):
@@ -168,7 +188,5 @@ def send_seed_and_package(COMBINER_IP):
 
     return auth_token, client
 
-# def set_server_function(client):
 
-#     client.start_session(server_functions=ServerFunctions)
     

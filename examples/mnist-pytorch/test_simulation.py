@@ -12,11 +12,11 @@ from server_functions_TrMean import ServerFunctions as TrMean
 from server_functions_fedavg import ServerFunctions as FedAvg
 
 def send_params_to_kubernetes_pods(helper_tuple):
-    COMBINER_IP, CLIENT_TOKEN, ATTACK_TYPE, inflation_factor, BATCH_SIZE, EPOCHS, LEARNING_RATE, DEFENSE_TYPE, BENIGN_CLIENTS, MALICIOUS_CLIENTS,DATA_ENDPOINT, DATA_ACCESS_KEY, DATA_SECRET_KEY, DATA_BUCKET_NAME, AUTH_TOKEN, client = helper_tuple[0], helper_tuple[1], helper_tuple[2], helper_tuple[3], helper_tuple[4], helper_tuple[5], helper_tuple[6], helper_tuple[7], helper_tuple[8], helper_tuple[9], helper_tuple[10], helper_tuple[11], helper_tuple[12], helper_tuple[13], helper_tuple[14], helper_tuple[15]
+    COMBINER_IP, CLIENT_TOKEN, ATTACK_TYPE, inflation_factor, BATCH_SIZE, EPOCHS, LEARNING_RATE, DEFENSE_TYPE, BENIGN_CLIENTS, MALICIOUS_CLIENTS,DATA_ENDPOINT, DATA_ACCESS_KEY, DATA_SECRET_KEY, DATA_BUCKET_NAME, AUTH_TOKEN, client, IID, BALANCED = helper_tuple[0], helper_tuple[1], helper_tuple[2], helper_tuple[3], helper_tuple[4], helper_tuple[5], helper_tuple[6], helper_tuple[7], helper_tuple[8], helper_tuple[9], helper_tuple[10], helper_tuple[11], helper_tuple[12], helper_tuple[13], helper_tuple[14], helper_tuple[15], helper_tuple[16], helper_tuple[17]    
     
     total_clients = BENIGN_CLIENTS + MALICIOUS_CLIENTS
     client_list = []
-
+    
     for i in range(BENIGN_CLIENTS):
         client_index = i + 1
         client_list.append(
@@ -31,7 +31,9 @@ def send_params_to_kubernetes_pods(helper_tuple):
                 "data_endpoint": DATA_ENDPOINT,
                 "data_access_key": DATA_ACCESS_KEY,
                 "data_secret_key": DATA_SECRET_KEY,
-                "data_bucket_name": DATA_BUCKET_NAME
+                "data_bucket_name": DATA_BUCKET_NAME,
+                "balanced": BALANCED,
+                "iid": IID,
             }
         )
     for i in range(MALICIOUS_CLIENTS):
@@ -48,7 +50,9 @@ def send_params_to_kubernetes_pods(helper_tuple):
                 "data_endpoint": DATA_ENDPOINT,
                 "data_access_key": DATA_ACCESS_KEY,
                 "data_secret_key": DATA_SECRET_KEY,
-                "data_bucket_name": DATA_BUCKET_NAME
+                "data_bucket_name": DATA_BUCKET_NAME,
+                "balanced": BALANCED,
+                "iid": IID,
             }
         )
 
@@ -70,9 +74,9 @@ def send_params_to_kubernetes_pods(helper_tuple):
          "./chart", "-f", "values-temp.yaml"
     ]
     subprocess.run(helm_cmd, check=True)
-    print("Clients deployed with user-supplied config!")
+    # print("Clients deployed with user-supplied config!")
 
-    time.sleep(20)
+    #time.sleep(5)
     print("Starting simulation...")
 
     if DEFENSE_TYPE == "dnc":
@@ -85,9 +89,14 @@ def send_params_to_kubernetes_pods(helper_tuple):
         ServerFunctions = TrMean
     elif DEFENSE_TYPE == "fedavg":
         ServerFunctions = FedAvg
+    session_name = input("Enter Session Name: ")
+    
+    #client.start_session(name=session_name, round_timeout=500, rounds=10)
 
-    client.start_session(server_functions=ServerFunctions, round_timeout=500, rounds=10)
-    print("Simulation started!")
+    client.start_session(name=session_name, server_functions=ServerFunctions, round_timeout=500, rounds=10)
+
+    #client.start_session(name=session_name, server_functions=ServerFunctions)
+    #print("Simulation started!")
 
 
 send_params_to_kubernetes_pods(helper())

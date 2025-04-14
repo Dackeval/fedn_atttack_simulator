@@ -34,7 +34,7 @@ def train(model):
     round_num = fetch_latest_round()
     logger.info(f"Round number is {round_num}")
     # Read environment variables from Kubernetes pod
-    client_index_str, malicious, attack, inflation_factor, batch_size, epochs, lr, _, _, _, _ = load_env_params()
+    client_index_str, malicious, attack, inflation_factor, batch_size, epochs, lr, _, _, _, _, _, _ = load_env_params()
     out_model_path = f"/app/model_update_{client_index_str}.npz"
     # Load data
     x_train, y_train = load_data(is_train=True)
@@ -141,12 +141,16 @@ def train(model):
                     logger.info(
                         f"Epoch {e}/{epochs-1} | Batch: {b}/{n_batches-1} | Loss: {loss.item()}")
 
+    train_acc, train_loss = train_loss_acc(model, x_train, y_train)
+
     # Metadata needed for aggregation server side
     metadata = {
         'num_examples': len(x_train),
         'batch_size': batch_size,
         'epochs': epochs,
-        'lr': lr
+        'lr': lr,
+        'train_loss': train_loss,
+        'train_accuracy': train_acc,
     }
 
     # Save JSON metadata file (mandatory)
@@ -178,3 +182,19 @@ def fetch_latest_round():
     logger.info(f"Total Rounds: {rounds_count}")
 
     return int(rounds_count)
+
+def train_loss_acc(model, x_train, y_train):
+    """test the model and return the training loss and accuracy."""
+    
+    model.eval()
+    criterion = torch.nn.CrossEntropyLoss()
+
+    with torch.no_grad():
+        train_out = model(x_train)
+        train_loss = criterion(train_out, y_train)
+        train_acc = torch.sum(torch.argmax(train_out, dim=1) == y_train).item() / len(train_out)
+    
+    logger.info('Training accuracy: %.4f', train_acc)
+    logger.info('Training loss: %.4f', train_loss.item())
+
+    return train_loss.item(), train_acc

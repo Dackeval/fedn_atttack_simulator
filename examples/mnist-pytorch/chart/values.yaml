@@ -22,6 +22,8 @@ clients:
     data_access_key: ""
     data_secret_key: ""
     data_bucket_name: ""
+    data_balanced: ""
+    data_iid: ""
   - id: 2
     is_malicious: true
     attack_type: "backdoor_35int"
@@ -33,5 +35,7 @@ clients:
     data_access_key: ""
     data_secret_key: ""
     data_bucket_name: ""
+    data_balanced: ""
+    data_iid: ""
 
 defense_type: "none"

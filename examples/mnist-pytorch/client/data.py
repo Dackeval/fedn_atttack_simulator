@@ -16,8 +16,13 @@ abs_path = os.path.abspath(dir_path)
 def _get_data_path():   
 
     client_index = os.environ.get("CLIENT_ID", "1")
-    remote_data_path = f"clients/{client_index}/mnist.pt"
-    client_data_directory_path = "/app/data/clients"
+    client_iid = os.environ.get("IID", "iid")
+    client_balance = os.environ.get("BALANCED", "balanced")
+    logger.info(f"client_id: {client_index}")    
+    logger.info(f"client_iid: {client_iid}")
+    logger.info(f"client_balance: {client_balance}")    
+    remote_data_path = f"mnist/{client_iid}_{client_balance}/clients/{client_index}/mnist.pt"
+    client_data_directory_path = f"/app/data/mnist/{client_iid}_{client_balance}/clients"
     partition_path = f"{client_data_directory_path}/{client_index}/mnist.pt"
     if os.path.isdir(f"{client_data_directory_path}/{client_index}"):
         return remote_data_path, partition_path, True
@@ -70,6 +75,8 @@ def load_data(is_train=True):
         X = data['x_test']
         y = data['y_test']
 
+    X = torch.tensor(X)        
+    y = torch.tensor(y)
     # Normalize
     X = X / 255
 

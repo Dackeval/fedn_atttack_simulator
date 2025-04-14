@@ -22,5 +22,7 @@ def load_env_params():
     data_access_key =  str(os.environ.get("DATA_ACCESS_KEY", ""))
     data_secret_key = str(os.environ.get("DATA_SECRET_KEY", ""))
     data_bucket_name =  str(os.environ.get("DATA_BUCKET_NAME", ""))
+    data_iid =  str(os.environ.get("IID", ""))
+    data_balance =  str(os.environ.get("BALANCED", ""))
 
-    return client_index_str, malicious, attack, inflation_factor, batch_size, epochs, lr, data_endpoint, data_access_key, data_secret_key, data_bucket_name
+    return client_index_str, malicious, attack, inflation_factor, batch_size, epochs, lr, data_endpoint, data_access_key, data_secret_key, data_bucket_name, data_iid, data_balance

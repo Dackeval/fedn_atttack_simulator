@@ -5,6 +5,7 @@ class ServerFunctions(ServerFunctionsBase):
     def __init__(self) -> None:
         self.round = 0  # Keep track of training rounds
         self.lr = 0.1  # Initial learning rate
+        self.used_clients_per_round = {}
 
     def client_selection(self, client_ids: List[str]) -> List[str]:
         # Select up to 10 random clients
@@ -19,75 +20,84 @@ class ServerFunctions(ServerFunctionsBase):
 
     def aggregate(self, previous_global: List[np.ndarray], client_updates: Dict[str, Tuple[List[np.ndarray], dict]]) -> List[np.ndarray]:
         
+        logger.info("DEBUG TEST TRMEAN")
         # trimming factor and number of clients for TrMean
         trimming_fraction = 0.1
         num_clients = len(client_updates)
+        # for tracking the participating clients
+        client_ids = list(client_updates.keys())
+        # create list to store parameters for each layer
+        layerwise_params = [[] for _ in range(len(previous_global))]
+        sample_counts = []
+
 
         # if lezs than 3 fallback to FedAvg
         if num_clients < 3:
             logger.info("Not enough clients for TrMean (need >=3). Falling back to FedAvg.")
+            self.used_clients_per_round[self.round] = client_ids
             return self.fedavg(previous_global, client_updates)
+
+        # for tracking 
+        for cid in client_ids:
+            client_parameters, metadata = client_updates[cid]
+            w = metadata.get("num_examples", 1)
+            sample_counts.append(float(w))
+
+            for layer_idx, layer_param in enumerate(client_parameters):
+                layerwise_params[layer_idx].append(layer_param)
+
+        # for tracking the used clients
+        final_used_clients = set()
 
         # coordinate-wise TrMean for each layer
         new_global = []
+
         for layer_idx in range(len(previous_global)):
-            # gather all parameters for each layer + their sample counts
-            layer_params = []
-            sample_counts = []
-            for client_id, (client_parameters, metadata) in client_updates.items():
-                w = metadata.get("num_examples", 1)
-                sample_counts.append(float(w))
 
-                # stack the parameters in layer_params per client
-                layer_params.append(client_parameters[layer_idx])
-
-            # reshape from (num_clients, (M,N)) to (num_clients, M, N) for easier manipulation 
-            # or (num_clients, D) for a vector, or (num_clients,) for a scalar/bias
-            stacked = np.stack(layer_params, axis=0)
-            # for reshaping back later.
-            original_shape = stacked.shape[1:] 
-            # reshape to (num_client, N*M) 
-            flattened = stacked.reshape(num_clients, -1)  
-            sample_counts = np.array(sample_counts)       # (num_clients,) to match with parameters
-
-            # We'll build a new array for the aggregated layer in flat form
+            stacked = np.stack(layerwise_params[layer_idx], axis=0)
+            original_shape = stacked.shape[1:]
+            flattened = stacked.reshape(num_clients, -1) # shape: (num_clients, NxM)
+            
             aggregated_flat = np.zeros(flattened.shape[1], dtype=flattened.dtype)
 
-            # looping over each coordinate ie layer
-            for col_idx in range(flattened.shape[1]):
-                # values is the params for the current clients 
-                values = flattened[:, col_idx]  
-
-                # Pair them with sample counts, e.g. [(params, num_examples), ...]
-                pairs = list(zip(values, sample_counts))
-
-                # sort by the parameter values
-                pairs.sort(key=lambda x: x[0])
-
-                trim_amount = int(trimming_fraction * num_clients)
-                max_trim = (num_clients - 1) // 2  # ensures at least 1 remains
-                trim_amount = max(1, min(trim_amount, max_trim))
+            for col in range(flattened.shape[1]):
+                layer_triplett = []
+                for i in range(num_clients):
+                    params = flattened[i, col]
+                    layer_triplett.append((params, client_ids[i], sample_counts[i]))
                 
-                if trim_amount * 2 >= num_clients:
-                    # If even after min() it's too big, skip trimming
-                    trimmed_pairs = pairs
-                else:
-                    trimmed_pairs = pairs[trim_amount : -trim_amount]
+                layer_triplett.sort(key=lambda x: x[0]) # sort by parameter value
 
-                # fedavg on the remaining 
-                total_weight = sum(w for _, w in trimmed_pairs)
-                if total_weight == 0:
-                    # fallback to mean if total num_examples is zero
-                    aggregated_value = np.mean([val for val, _ in trimmed_pairs])
+                temp_number_of_trimmed_clients = int(trimming_fraction * num_clients)
+                max_trimmed = (num_clients - 1) // 2
+                number_of_trimmed_clients = max(1, min(temp_number_of_trimmed_clients, max_trimmed))
+
+                if number_of_trimmed_clients * 2 >= num_clients:
+                    # If even after min() it's too big, skip trimming entirely
+                    trimmed_triplets = layer_triplett
                 else:
-                    weighted_sum = sum(val * w for val, w in trimmed_pairs)
+                    trimmed_triplets = layer_triplett[number_of_trimmed_clients:-number_of_trimmed_clients]
+
+                total_weight = sum(tr[2] for tr in trimmed_triplets)  # sum of sample_counts
+                if total_weight == 0:
+                    aggregated_value = np.mean([tr[0] for tr in trimmed_triplets]) if trimmed_triplets else 0.0
+                else:
+                    weighted_sum = sum(tr[0] * tr[2] for tr in trimmed_triplets)
                     aggregated_value = weighted_sum / total_weight
 
-                aggregated_flat[col_idx] = aggregated_value
+                aggregated_flat[col] = aggregated_value
 
-            # reshape back to the original layer shape (e.g. (M, N))
+                # Mark those clients as "used" for this coordinate
+                for val, c_id, w in trimmed_triplets:
+                    final_used_clients.add(c_id)
+
+            # reshape to original layer shape
             new_layer = aggregated_flat.reshape(original_shape)
             new_global.append(new_layer)
+
+        # log which clients contributed to aggregation
+        logger.info(f"Round {self.round} - TrMean used clients (union across coordinates): {sorted(final_used_clients)}")
+        self.used_clients_per_round[self.round] = final_used_clients
 
         return new_global
 
@@ -107,4 +117,55 @@ class ServerFunctions(ServerFunctionsBase):
 
         return [p / total_weight for p in weighted_sum]
     
+
+# def simulate_trmean_aggregator():
+
+#     previous_global = [
+#         np.random.randn(64, 784),   # fc1.weight
+#         np.random.randn(64),        # fc1.bias
+#         np.random.randn(32, 64),    # fc2.weight
+#         np.random.randn(32),        # fc2.bias
+#         np.random.randn(10, 32),    # fc3.weight
+#         np.random.randn(10),        # fc3.bias
+#     ]
+
+
+#     client_updates = {}
+#     for client_idx in range(4):
+#         if client_idx < 3:
+#             client_params = []
+#             for layer in previous_global:
+#                 noise = 0.01 * np.random.randn(*layer.shape)
+#                 client_params.append(layer + noise)
+
+#             metadata = {"num_examples": np.random.randint(5, 100)}  
+#             client_updates[f"client_{client_idx}"] = (client_params, metadata)
+#         else: 
+#             client_params = []
+#             for layer in previous_global:
+#                 noise = 1000 * np.random.randn(*layer.shape)
+#                 client_params.append(layer + noise)
+
+#             metadata = {"num_examples": np.random.randint(5, 100)}  
+#             client_updates[f"client_{client_idx}"] = (client_params, metadata)
+
+
+#     aggregator = ServerFunctions()
+
+#     new_global = aggregator.aggregate(previous_global, client_updates)
+#     print("used clients per round:")
+#     print(aggregator.used_clients_per_round)
+
+#     print("=== Aggregation Complete ===")
+#     for i, layer in enumerate(new_global):
+#         print(f"Layer {i} shape: {layer.shape}")
+#         # Check if any NaNs
+#         if np.isnan(layer).any():
+#             print(f"Layer {i} has NaNs!")
+#         else:
+#             print(f"Layer {i} is OK, mean={layer.mean():.4f}, std={layer.std():.4f}")
+
+
+# if __name__ == "__main__":
+#     simulate_trmean_aggregator()
 

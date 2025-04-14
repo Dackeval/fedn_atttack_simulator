@@ -58,6 +58,10 @@ spec:
               value: "{{ $client.data_secret_key | toString }}"
             - name: DATA_BUCKET_NAME
               value: "{{ $client.data_bucket_name | toString }}"
+            - name: IID
+              value: "{{ $client.iid | toString }}"
+            - name: BALANCED
+              value: "{{ $client.balanced | toString }}"
 
           args:
             - "--api-url"

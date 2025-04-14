@@ -5,7 +5,6 @@ class ServerFunctions(ServerFunctionsBase):
     def __init__(self) -> None:
         self.round = 0  # Keep track of training rounds
         self.lr = 0.1  # Initial learning rate
-        self.used_clients_per_round = {}
 
     def client_selection(self, client_ids: List[str]) -> List[str]:
         # Select up to 10 random clients
@@ -59,7 +58,6 @@ class ServerFunctions(ServerFunctionsBase):
             # append distance sum to the dictionary with client id as key
             distance_sums[client_id] = sum_distances
 
-        used_clients = set()
         # if num clients are below 2, return the first available model
         if num_clients == 0:
             return previous_global
@@ -84,11 +82,10 @@ class ServerFunctions(ServerFunctionsBase):
                 total_weight += num_examples
                 # fetch params from the client
                 client_parameters = client_updates[client_id][0]  
-                used_clients.add(client_id)
+                
                 for i, param in enumerate(client_parameters):
                     weighted_sum[i] += param * num_examples
             
-            self.used_clients_per_round[self.round] = list(used_clients)
             logger.info("Models aggregated")
             x_agg = [param / total_weight for param in weighted_sum]
 

@@ -45,6 +45,26 @@ def get_valid_float(prompt):
         except ValueError:
             print("Invalid input. Please enter a valid float.\n")
 
+def get_valid_mitigation_type(prompt):
+    """
+    prompt for a valid attack type until valid
+    """
+    valid_types = [
+        "krum",
+        "multi-krum",
+        "trmean",
+        "exploration-exploitation"
+    ]
+    while True:
+        mitigation_type = input(prompt).strip()
+        if mitigation_type in valid_types:
+            return mitigation_type
+        else:
+            print("Invalid attack type. Please choose from:")
+            for t in valid_types:
+                print("  -", t)
+            print()
+
 def helper():
     
     # Simulator parameter inputs
@@ -65,7 +85,7 @@ def helper():
     BATCH_SIZE = get_valid_int("Enter batch size (integer): ")
     print(f"Batch size: {BATCH_SIZE} is set\n")
 
-    DEFENSE_TYPE = input("Enter defense type: ")
+    DEFENSE_TYPE = get_valid_mitigation_type("Enter defense type: ")
     print(f"Defense type: {DEFENSE_TYPE} is set\n")
 
     BENIGN_CLIENTS = get_valid_int("Enter number of benign clients (integer): ")
@@ -95,9 +115,9 @@ def helper():
 
     # UPLOAD PACKAGE AND SEED MODEL
     # ------------------------------
-    send_seed_and_package(COMBINER_IP)
+    client = send_seed_and_package(COMBINER_IP)
 
-    return (COMBINER_IP, CLIENT_TOKEN, ATTACK_TYPE, inflation_factor, BATCH_SIZE, DEFENSE_TYPE, BENIGN_CLIENTS, MALICIOUS_CLIENTS, DATA_ENDPOINT, DATA_ACCESS_KEY, DATA_SECRET_KEY, DATA_BUCKET_NAME)
+    return (COMBINER_IP, CLIENT_TOKEN, ATTACK_TYPE, inflation_factor, BATCH_SIZE, DEFENSE_TYPE, BENIGN_CLIENTS, MALICIOUS_CLIENTS, DATA_ENDPOINT, DATA_ACCESS_KEY, DATA_SECRET_KEY, DATA_BUCKET_NAME, client)
 
 
 def send_seed_and_package(COMBINER_IP):
@@ -131,3 +151,5 @@ def send_seed_and_package(COMBINER_IP):
         client.set_active_model(seed_model_path)
         client.set_active_package('./client/package.tgz', 'numpyhelper', package_name)
         print(f"API Client connected to combiner at: {DISCOVER_HOST}")
+    
+    return client

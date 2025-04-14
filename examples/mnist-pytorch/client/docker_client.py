@@ -18,6 +18,7 @@ def get_api_url(api_url: str, api_port: int):
     return url
 
 def on_train(in_model_bytes, client_settings=None):
+    logger.info('In train')
     in_model = load_parameters_from_bytesio(in_model_bytes)
     metadata, out_model = train(in_model)
     metadata = {f'training_metadata': metadata}
