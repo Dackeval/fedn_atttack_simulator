@@ -96,11 +96,14 @@ class ServerFunctions(ServerFunctionsBase):
         logger.info(f"Aggregating from {len(trusted_clients)} trusted clients this round.")
         x_agg = [w / total_weight for w in weighted_sum]
 
+        for round in self.used_clients_per_round:
+            logger.info(f"Used clients Round {round}: {self.used_clients_per_round[round]}")
+        
         return x_agg
         
 
 
-# def simulate_trmean_aggregator():
+# def simulate_trmean_aggregator(aggregator):
 
 #     previous_global = [
 #         np.random.randn(64, 784),   # fc1.weight
@@ -111,30 +114,28 @@ class ServerFunctions(ServerFunctionsBase):
 #         np.random.randn(10),        # fc3.bias
 #     ]
 
-
 #     client_updates = {}
 #     for client_idx in range(4):
+#         client_id = f"client_{client_idx}"
 #         if client_idx < 3:
 #             client_params = []
 #             for layer in previous_global:
 #                 noise = 0.01 * np.random.randn(*layer.shape)
 #                 client_params.append(layer + noise)
 
-#             metadata = {"num_examples": np.random.randint(5, 100)}  
-#             client_updates[f"client_{client_idx}"] = (client_params, metadata)
+#             metadata = {"num_examples": np.random.randint(5, 100), "client_id": client_id}  
+#             client_updates[client_id] = (client_params, metadata)
 #         else: 
 #             client_params = []
 #             for layer in previous_global:
 #                 noise = 100 * np.random.randn(*layer.shape)
 #                 client_params.append(layer + noise)
 
-#             metadata = {"num_examples": np.random.randint(5, 100)}  
-#             client_updates[f"client_{client_idx}"] = (client_params, metadata)
-
-
-#     aggregator = ServerFunctions()
+#             metadata = {"num_examples": np.random.randint(5, 100), "client_id": client_id}  
+#             client_updates[client_id] = (client_params, metadata)
 
 #     new_global = aggregator.aggregate(previous_global, client_updates)
+
 #     print("used clients per round:")
 #     print(aggregator.used_clients_per_round)
 
@@ -147,6 +148,14 @@ class ServerFunctions(ServerFunctionsBase):
 #         else:
 #             print(f"Layer {i} is OK, mean={layer.mean():.4f}, std={layer.std():.4f}")
 
+#     # Return updated global for chaining in next round
+#     return new_global
+
 
 # if __name__ == "__main__":
-#     simulate_trmean_aggregator()
+#     aggregator = ServerFunctions()
+
+#     global_params = None
+#     for round_num in range(2):
+#         print(f"\n=== Simulation Round {round_num + 1} ===")
+#         global_params = simulate_trmean_aggregator(aggregator)

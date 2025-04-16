@@ -19,8 +19,6 @@ class ServerFunctions(ServerFunctionsBase):
         return {"learning_rate": self.lr}
 
     def aggregate(self, previous_global: List[np.ndarray], client_updates: Dict[str, Tuple[List[np.ndarray], dict]]) -> List[np.ndarray]:
-        
-        logger.info("DEBUG TEST TRMEAN")
         # trimming factor and number of clients for TrMean
         trimming_fraction = 0.1
         num_clients = len(client_updates)
@@ -31,7 +29,7 @@ class ServerFunctions(ServerFunctionsBase):
         sample_counts = []
 
 
-        # if lezs than 3 fallback to FedAvg
+        # if less than 3 fallback to FedAvg
         if num_clients < 3:
             logger.info("Not enough clients for TrMean (need >=3). Falling back to FedAvg.")
             self.used_clients_per_round[self.round] = client_ids
@@ -97,7 +95,8 @@ class ServerFunctions(ServerFunctionsBase):
 
         # log which clients contributed to aggregation
         logger.info(f"Round {self.round} - TrMean used clients (union across coordinates): {sorted(final_used_clients)}")
-        self.used_clients_per_round[self.round] = final_used_clients
+        for round in self.used_clients_per_round:
+            logger.info(f"Round {round}: {self.used_clients_per_round[round]}")
 
         return new_global
 
@@ -114,58 +113,9 @@ class ServerFunctions(ServerFunctionsBase):
         if total_weight == 0:
             # fallback to previous global if no clients reported any examples
             return previous_global
+        
+        logger.info(f"Round {self.round} - TrMean used clients (union across coordinates): {client_updates.keys()}")
 
         return [p / total_weight for p in weighted_sum]
     
-
-# def simulate_trmean_aggregator():
-
-#     previous_global = [
-#         np.random.randn(64, 784),   # fc1.weight
-#         np.random.randn(64),        # fc1.bias
-#         np.random.randn(32, 64),    # fc2.weight
-#         np.random.randn(32),        # fc2.bias
-#         np.random.randn(10, 32),    # fc3.weight
-#         np.random.randn(10),        # fc3.bias
-#     ]
-
-
-#     client_updates = {}
-#     for client_idx in range(4):
-#         if client_idx < 3:
-#             client_params = []
-#             for layer in previous_global:
-#                 noise = 0.01 * np.random.randn(*layer.shape)
-#                 client_params.append(layer + noise)
-
-#             metadata = {"num_examples": np.random.randint(5, 100)}  
-#             client_updates[f"client_{client_idx}"] = (client_params, metadata)
-#         else: 
-#             client_params = []
-#             for layer in previous_global:
-#                 noise = 1000 * np.random.randn(*layer.shape)
-#                 client_params.append(layer + noise)
-
-#             metadata = {"num_examples": np.random.randint(5, 100)}  
-#             client_updates[f"client_{client_idx}"] = (client_params, metadata)
-
-
-#     aggregator = ServerFunctions()
-
-#     new_global = aggregator.aggregate(previous_global, client_updates)
-#     print("used clients per round:")
-#     print(aggregator.used_clients_per_round)
-
-#     print("=== Aggregation Complete ===")
-#     for i, layer in enumerate(new_global):
-#         print(f"Layer {i} shape: {layer.shape}")
-#         # Check if any NaNs
-#         if np.isnan(layer).any():
-#             print(f"Layer {i} has NaNs!")
-#         else:
-#             print(f"Layer {i} is OK, mean={layer.mean():.4f}, std={layer.std():.4f}")
-
-
-# if __name__ == "__main__":
-#     simulate_trmean_aggregator()
 

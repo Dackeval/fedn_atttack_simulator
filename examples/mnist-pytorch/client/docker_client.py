@@ -65,6 +65,10 @@ def main(api_url: str, api_port: int, token: str = None):
         "preferred_combiner": "",
     }
 
+    print(f"url: {url}")
+    print(f"token: {token}")
+    print(f"controller_config: {controller_config}")
+    print("Connecting to API...")
     result, combiner_config = fedn_client.connect_to_api(url, token, controller_config)
 
     if result != ConnectToApiResult.Assigned:

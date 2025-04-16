@@ -82,7 +82,6 @@ def check_partitions(partitions_dir):
     For each client partition under `partitions_dir`,
     - Load mnist.pt
     - Print shapes of train/test sets
-    - Optionally show a sample image & label distribution
     """
     clients = sorted(os.listdir(partitions_dir))
 
@@ -93,7 +92,6 @@ def check_partitions(partitions_dir):
 
         data = torch.load(partition_path)
 
-        # Extract
         x_train = data["x_train"]
         y_train = data["y_train"]
         x_test = data["x_test"]
@@ -109,7 +107,6 @@ def check_partitions(partitions_dir):
         if not isinstance(y_test, torch.Tensor):
             y_test = torch.tensor(y_test)
 
-        # Print sizes
         print(f"\n=== Client {client_id} ===")
         print(f"x_train shape: {tuple(x_train.shape)}  y_train shape: {tuple(y_train.shape)}")
         print(f"x_test  shape: {tuple(x_test.shape)}  y_test  shape: {tuple(y_test.shape)}")
@@ -123,8 +120,7 @@ def check_partitions(partitions_dir):
         else:
             print("Label distribution not shown (y_train not 1D).")
 
-        # (Optional) visualize one sample
-        # We'll just pick the first sample in x_train if it exists
+
         if x_train.numel() > 0:
             sample_img = x_train[0]
             sample_label = y_train[0].item() if y_train.numel() > 0 else None

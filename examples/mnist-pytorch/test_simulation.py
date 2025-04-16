@@ -76,7 +76,7 @@ def send_params_to_kubernetes_pods(helper_tuple):
     subprocess.run(helm_cmd, check=True)
     # print("Clients deployed with user-supplied config!")
 
-    #time.sleep(5)
+    time.sleep(20)
     print("Starting simulation...")
 
     if DEFENSE_TYPE == "dnc":
@@ -91,9 +91,9 @@ def send_params_to_kubernetes_pods(helper_tuple):
         ServerFunctions = FedAvg
     session_name = input("Enter Session Name: ")
     
-    #client.start_session(name=session_name, round_timeout=500, rounds=10)
+    #print(client.start_session(name=session_name, round_timeout=500, rounds=10))
 
-    client.start_session(name=session_name, server_functions=ServerFunctions, round_timeout=500, rounds=10)
+    print(client.start_session(name=session_name, server_functions=ServerFunctions, round_timeout=600, rounds=10))
 
     #client.start_session(name=session_name, server_functions=ServerFunctions)
     #print("Simulation started!")
