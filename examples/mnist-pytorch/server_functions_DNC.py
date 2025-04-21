@@ -7,10 +7,18 @@ class ServerFunctions(ServerFunctionsBase):
         self.lr = 0.1  # Initial learning rate
         self.used_clients_per_round = {} # for tracking which clients were used in each round
 
-    def client_selection(self, client_ids: List[str]) -> List[str]:
-        # Select up to 10 random clients
-        return random.sample(client_ids, min(len(client_ids), 10))
-
+    def client_selection(self, client_ids: List[str]) -> List[str]:        
+        X = 5  # number of initial rounds to select only benign or malicious
+        if self.round < X:
+            # Filter out any client IDs that contain 'malicious'
+            benign_clients = [cid for cid in client_ids if "malicious" not in cid.lower()]
+            logger.info(f"Round {self.round}: Selecting only benign clients: {benign_clients}")
+            return benign_clients
+        else:
+            logger.info(f"Round {self.round}: Selecting all clients: {client_ids}")
+            return client_ids
+        
+    
     def client_settings(self, global_model: List[np.ndarray]) -> dict:
         # (Optional) Adjust the learning rate every 10 rounds
         if self.round % 10 == 0 and self.round > 0:

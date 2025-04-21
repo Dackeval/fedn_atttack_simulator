@@ -93,10 +93,10 @@ def send_params_to_kubernetes_pods(helper_tuple):
     
     #print(client.start_session(name=session_name, round_timeout=500, rounds=10))
 
-    print(client.start_session(name=session_name, server_functions=ServerFunctions, round_timeout=600, rounds=10))
+    print(client.start_session(name=session_name, server_functions=ServerFunctions, round_timeout=600, rounds=50))
 
     #client.start_session(name=session_name, server_functions=ServerFunctions)
-    #print("Simulation started!")
+    #print("Simulation started!")5
 
 
 send_params_to_kubernetes_pods(helper())

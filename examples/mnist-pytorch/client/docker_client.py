@@ -7,6 +7,7 @@ from model import load_parameters_from_bytesio, save_parameters_to_bytes
 import random
 import string
 import logging
+import os
 
 logger = logging.getLogger("fedn")
 logging.basicConfig(level=logging.INFO)
@@ -52,10 +53,19 @@ def main(api_url: str, api_port: int, token: str = None):
 
     url = get_api_url(api_url, api_port)
 
-    name = generate_variable_name()
-    fedn_client.set_name(name)
+    mal_bool = os.environ.get("MALICIOUS", "false").strip().lower()
+    client_id = os.environ.get("CLIENT_ID", "none")
 
-    client_id = str(uuid.uuid4())
+    if mal_bool == "true":
+        name = f"malicious_client_{client_id}"
+    else:
+        name = f"benign_client_{client_id}"
+    
+    #name = generate_variable_name()
+    fedn_client.set_name(name)
+    
+    #client_id = str(uuid.uuid4())
+    client_id = name
     fedn_client.set_client_id(client_id)
 
     controller_config = {
