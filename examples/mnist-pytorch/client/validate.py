@@ -31,19 +31,26 @@ def validate(global_model, out_json_path='/app/validation.json', data_path=None)
 
 
     client_index = os.environ.get("CLIENT_ID", "1")
-    local_model = load_parameters(f"/app/model_update_{client_index}.npz")
-    
-    local_model.eval()
-    global_model.eval()
-    criterion = torch.nn.CrossEntropyLoss()
-    
-    with torch.no_grad():
-        # Training set
-        train_out = local_model(x_train)
-        train_loss = criterion(train_out, y_train)
-        train_acc = torch.sum(torch.argmax(train_out, dim=1) == y_train).item() / len(train_out)
+    local_model_file = f"/app/model_update_{client_index}.npz"
 
-        # Test set
+    criterion = torch.nn.CrossEntropyLoss()
+
+    if os.path.exists(local_model_file):
+        local_model = load_parameters(local_model_file)
+        local_model.eval()
+        # Evaluate on train set
+        with torch.no_grad():
+            train_out = local_model(x_train)
+            train_loss = criterion(train_out, y_train)
+            train_acc = torch.sum(torch.argmax(train_out, dim=1) == y_train).item() / len(train_out)
+    else:
+        logger.warning(f"Local model file not found at '{local_model_file}', skipping local model evaluation.")
+        train_loss = torch.tensor(0.0)
+        train_acc = 0.0
+
+    # Evaluate the global model on the test set
+    global_model.eval()
+    with torch.no_grad():
         test_out = global_model(x_test)
         test_loss = criterion(test_out, y_test)
         test_acc = torch.sum(torch.argmax(test_out, dim=1) == y_test).item() / len(test_out)
