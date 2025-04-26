@@ -3,13 +3,18 @@ from fedn.network.combiner.hooks.allowed_import import Dict, List, ServerFunctio
 
 class ServerFunctions(ServerFunctionsBase):
     def __init__(self) -> None:
-        self.round = 0  
+        self.round = 0  # Keep track of training rounds
         self.lr = 0.1  # Initial learning rate
-        self.used_clients_per_round = {} # for tracking which clients were used in each round
+        self.used_clients_per_round = {}
+        self.exclude_every_kth_round = 5
+        self.session_length = 30
+        self.lr_decay_period = 10
 
     def client_selection(self, client_ids: List[str]) -> List[str]:        
-        X = 5  # number of initial rounds to select only benign or malicious
-        if self.round < X:
+        
+        round_in_session = (self.round % self.session_length) + 1
+
+        if round_in_session < self.exclude_every_kth_round:
             # Filter out any client IDs that contain 'malicious'
             benign_clients = [cid for cid in client_ids if "malicious" not in cid.lower()]
             logger.info(f"Round {self.round}: Selecting only benign clients: {benign_clients}")
@@ -17,12 +22,21 @@ class ServerFunctions(ServerFunctionsBase):
         else:
             logger.info(f"Round {self.round}: Selecting all clients: {client_ids}")
             return client_ids
-        
-    
+
     def client_settings(self, global_model: List[np.ndarray]) -> dict:
-        # (Optional) Adjust the learning rate every 10 rounds
-        if self.round % 10 == 0 and self.round > 0:
+        # Adjust the learning rate every 10 rounds
+        round_in_session = (self.round % self.session_length)
+
+        # reset at start of each session
+        if round_in_session == 0 and self.round != 0:
+            self.lr = 0.1
+            logger.info(f"Round {self.round}: New session! Reset LR to 0.1")
+
+        #  Within a session 
+        if (self.round > 0) and (self.round % self.lr_decay_period == 0):
             self.lr *= 0.1
+            logger.info(f"Round {self.round}: Decaying learning rate. New lr: {self.lr}")
+
         self.round += 1
         return {"learning_rate": self.lr}
 

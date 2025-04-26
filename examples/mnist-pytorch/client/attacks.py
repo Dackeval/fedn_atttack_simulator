@@ -4,14 +4,15 @@ import logging
 logger = logging.getLogger("fedn")
 logging.basicConfig(level=logging.INFO)
 
-def label_flip(y_train):
+def label_flip(y):
     """
     Label flipping attack - basic
     """
-    L = len(set([value.item() for value in y_train]))
-    y_train = torch.tensor([L - 1 - y for y in y_train])
-    
-    return y_train
+    unique_labels = y.unique().tolist()
+    for old_lbl in unique_labels:
+        new_lbl = (old_lbl + 1) % 10
+        y[y == old_lbl] = new_lbl
+    return y
 
 def backdoor_35int(x_train, y_train):
     """
