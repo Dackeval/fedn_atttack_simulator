@@ -6,15 +6,19 @@ class ServerFunctions(ServerFunctionsBase):
         self.round = 0  # Keep track of training rounds
         self.lr = 0.1  # Initial learning rate
         self.used_clients_per_round = {}
-        self.exclude_every_kth_round = 6
-        self.session_length = 31
+        self.exclude_every_kth_round = 5
+        self.session_length = 30
         self.lr_decay_period = 10
+        self.session_counter = 0  
 
     def client_selection(self, client_ids: List[str]) -> List[str]:        
         
         round_in_session = (self.round % self.session_length) + 1
 
-        if round_in_session < self.exclude_every_kth_round:
+        needed_rounds = max(1, self.exclude_every_kth_round -
+                               (1 if self.session_counter > 0 else 0))
+        
+        if round_in_session < needed_rounds:
             # Filter out any client IDs that contain 'malicious'
             benign_clients = [cid for cid in client_ids if "malicious" not in cid.lower()]
             logger.info(f"Round {self.round}: Selecting only benign clients: {benign_clients}")
@@ -27,13 +31,12 @@ class ServerFunctions(ServerFunctionsBase):
         # Adjust the learning rate every 10 rounds
         round_in_session = (self.round % self.session_length)
 
-        # reset at start of each session
         if round_in_session == 0 and self.round != 0:
+            self.session_counter += 1
             self.lr = 0.1
-            logger.info(f"Round {self.round}: New session! Reset LR to 0.1")
+            logger.info(f"Round {self.round}: New session! Reset LR to {self.lr}")
 
-        #  Within a session 
-        if (self.round > 0) and (self.round % self.lr_decay_period == 0):
+        elif self.round > 0 and self.round % self.lr_decay_period == 0:
             self.lr *= 0.1
             logger.info(f"Round {self.round}: Decaying learning rate. New lr: {self.lr}")
 
@@ -121,61 +124,3 @@ class ServerFunctions(ServerFunctionsBase):
             logger.info(f"Used clients Round {round}: {self.used_clients_per_round[round]}")
         
         return x_agg
-
-
-# def simulate_trmean_aggregator(aggregator):
-
-#     previous_global = [
-#         np.random.randn(64, 784),   # fc1.weight
-#         np.random.randn(64),        # fc1.bias
-#         np.random.randn(32, 64),    # fc2.weight
-#         np.random.randn(32),        # fc2.bias
-#         np.random.randn(10, 32),    # fc3.weight
-#         np.random.randn(10),        # fc3.bias
-#     ]
-
-#     client_updates = {}
-#     for client_idx in range(4):
-#         client_id = f"client_{client_idx}"
-#         if client_idx < 3:
-#             client_params = []
-#             for layer in previous_global:
-#                 noise = 0.01 * np.random.randn(*layer.shape)
-#                 client_params.append(layer + noise)
-
-#             metadata = {"num_examples": np.random.randint(5, 100), "client_id": client_id}  
-#             client_updates[client_id] = (client_params, metadata)
-#         else: 
-#             client_params = []
-#             for layer in previous_global:
-#                 noise = 100 * np.random.randn(*layer.shape)
-#                 client_params.append(layer + noise)
-
-#             metadata = {"num_examples": np.random.randint(5, 100), "client_id": client_id}  
-#             client_updates[client_id] = (client_params, metadata)
-
-#     new_global = aggregator.aggregate(previous_global, client_updates)
-
-#     print("used clients per round:")
-#     print(aggregator.used_clients_per_round)
-
-#     print("=== Aggregation Complete ===")
-#     for i, layer in enumerate(new_global):
-#         print(f"Layer {i} shape: {layer.shape}")
-#         # Check if any NaNs
-#         if np.isnan(layer).any():
-#             print(f"Layer {i} has NaNs!")
-#         else:
-#             print(f"Layer {i} is OK, mean={layer.mean():.4f}, std={layer.std():.4f}")
-
-#     # Return updated global for chaining in next round
-#     return new_global
-
-
-# if __name__ == "__main__":
-#     aggregator = ServerFunctions()
-
-#     global_params = None
-#     for round_num in range(2):
-#         print(f"\n=== Simulation Round {round_num + 1} ===")
-#         global_params = simulate_trmean_aggregator(aggregator)
