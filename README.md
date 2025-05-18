@@ -10,7 +10,7 @@ Currently the simulator only runs on the Mnist-Pytorch Example. *
 
 ```bash
 # 1 · Clone and enter the repo
-git clone [https://github.com/<your‑org>/<repo>.git](https://github.com/Dackeval/fedn_atttack_simulator.git)
+git clone https://github.com/Dackeval/fedn_atttack_simulator.git
 cd fedn_atttack_simulator
 
 # 2 · Create an isolated Python env
