@@ -107,19 +107,6 @@ def send_params_to_kubernetes_pods():
     print("Waiting for pods to be ready...")
     time.sleep(20)
 
-    # # select the server functions based on the defense type
-    # if sim_cfg["defense_type"] == "dnc":
-    #     ServerFunctions = DNC
-    # elif sim_cfg["defense_type"] == "krum":
-    #     ServerFunctions = KRUM
-    # elif sim_cfg["defense_type"] == "multi-krum":
-    #     ServerFunctions = Multi_KRUM
-    # elif sim_cfg["defense_type"] == "trmean":
-    #     ServerFunctions = TrMean
-    # elif sim_cfg["defense_type"] == "fedavg":
-    #     ServerFunctions = FedAvg
-
-    
     session_name = input("Enter Session Name: ")
     os.environ["FEDN_AUTH_TOKEN"] = sim_cfg["auth_token"]
     discover_host = sim_cfg["combiner_ip"].removeprefix('https://')
