@@ -155,6 +155,7 @@ simulation:
 2. **Upload them to FEDn Studio**
 
    ```bash
+   export FEDN_AUTH_TOKEN=<access-token> # available on Studio under clients
    fedn studio login -u <user> -P <pwd> -H <studio_host>
    fedn project set-context -id <project_id> -H <studio_host>
    fedn model set-active -f model.npz -H <studio_host>
