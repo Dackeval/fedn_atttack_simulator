@@ -51,6 +51,8 @@ class ServerFunctions(ServerFunctionsBase):
         logger.info(f"[CFG] aggregator={self.aggregator_type} "
                     f"late_delay={self.late_delay} late_set={sorted(self.late_set)}")
 
+        round_in_session = self.round % self.session_length
+
         allowed = []
         for cid in client_ids:
             try:
@@ -59,7 +61,7 @@ class ServerFunctions(ServerFunctionsBase):
                 allowed.append(cid)
                 continue
 
-            if idx in self.late_set and self.round < self.late_delay:
+            if idx in self.late_set and round_in_session < self.late_delay:
                 logger.info(f"[{self.aggregator_type}] exclude {cid}")
             else:
                 allowed.append(cid)
