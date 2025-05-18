@@ -4,21 +4,25 @@ from helper_simulation import helper
 from fedn import APIClient
 import time
 import os
-
-# from server_functions_DNC import ServerFunctions as DNC
-# from server_functions_KRUM import ServerFunctions as KRUM
-# from server_functions_Multi_KRUM import ServerFunctions as Multi_KRUM
-# from server_functions_TrMean import ServerFunctions as TrMean
-# from server_functions_fedavg import ServerFunctions as FedAvg
+from pathlib import Path
 
 from server_functions import ServerFunctions
-
 from bin.split_data import split as sd
 
-def load_config(path_to_yaml="/Users/sigvard/Desktop/fedn_attack_simulator/examples/mnist-pytorch/config.yaml"):
-    with open(path_to_yaml, 'r') as file:
-        config = yaml.safe_load(file)
-    return config
+
+
+def load_config(path_to_yaml: str | None = None):
+    """
+    Load the YAML config. Priority:
+    1. explicit path passed in
+    2. ./config.yaml next to this script
+    """
+    if path_to_yaml is None:
+        # /path/to/examples/mnist-pytorch/config.yaml
+        path_to_yaml = Path(__file__).with_name("config.yaml")
+
+    with open(path_to_yaml, "r") as fh:
+        return yaml.safe_load(fh)
 
 def send_params_to_kubernetes_pods():
     #COMBINER_IP, CLIENT_TOKEN, ATTACK_TYPE, inflation_factor, BATCH_SIZE, EPOCHS, LEARNING_RATE, DEFENSE_TYPE, BENIGN_CLIENTS, MALICIOUS_CLIENTS,DATA_ENDPOINT, DATA_ACCESS_KEY, DATA_SECRET_KEY, DATA_BUCKET_NAME, AUTH_TOKEN, client, IID, BALANCED = helper_tuple[0], helper_tuple[1], helper_tuple[2], helper_tuple[3], helper_tuple[4], helper_tuple[5], helper_tuple[6], helper_tuple[7], helper_tuple[8], helper_tuple[9], helper_tuple[10], helper_tuple[11], helper_tuple[12], helper_tuple[13], helper_tuple[14], helper_tuple[15], helper_tuple[16], helper_tuple[17]    

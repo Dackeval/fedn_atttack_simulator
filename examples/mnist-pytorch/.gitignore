@@ -11,3 +11,6 @@ config_private.yaml
 server_functions_*.py
 server_functions_old
 .DS_Store
+# Byte-code caches
+__pycache__/
+*.py[cod]
