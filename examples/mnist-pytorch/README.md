@@ -169,7 +169,7 @@ simulation:
 
    The script prompts you to reuse/create data partitions and asks for a **session name** (e.g. `mnist-iid-balanced-10c-2025-05-18`).
 
-FEDn spins up the aggregator, combiner, and `mnist‑sim` client pods. Progress streams to your terminal and appears in Studio.
+The simulator spins up the `mnist‑sim` client pods. 
 
 ---
 
