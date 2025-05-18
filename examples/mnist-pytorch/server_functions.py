@@ -133,7 +133,7 @@ class ServerFunctions(ServerFunctionsBase):
         if num_clients < 3:
             logger.info("Not enough clients for TrMean (need >=3). Falling back to FedAvg.")
             self.used_clients_per_round[self.round] = client_ids
-            return self.fedavg(previous_global, client_updates)
+            return self._aggregate_fedavg(previous_global, client_updates)
 
         # for tracking 
         for cid in client_ids:
