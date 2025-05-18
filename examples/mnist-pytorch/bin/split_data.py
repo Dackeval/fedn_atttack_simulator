@@ -35,7 +35,7 @@ def iid_unbalanced_split(x, y, num_clients, min_samples_prop=0.1, seed=42):
     total_samples = len(x)
     num_classes = len(np.unique(y))
 
-    # STEP 1: Decide how many total samples each client gets
+    # Decide how many total samples each client gets
     # (We sample from Dirichlet, but ensure no client is under min_samples)
     client_sizes = np.random.dirichlet(alpha=np.ones(num_clients)) * total_samples
     client_sizes = client_sizes.astype(int)
@@ -45,7 +45,7 @@ def iid_unbalanced_split(x, y, num_clients, min_samples_prop=0.1, seed=42):
         client_sizes = np.random.dirichlet(alpha=np.ones(num_clients)) * total_samples
         client_sizes = client_sizes.astype(int)
 
-    # STEP 2: Count how many of each class there is in the entire dataset
+    # Count how many of each class there is in the entire dataset
     class_indices = {}
     for c in range(num_classes):
         class_indices[c] = np.where(y == c)[0]
