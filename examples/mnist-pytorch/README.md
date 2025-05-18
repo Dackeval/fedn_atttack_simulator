@@ -1,6 +1,6 @@
 # FEDn MNIST Simulator
 
-*A lightweight reference project that shows how to run federated learning experiments on the MNIST dataset with [FEDn](https://github.com/scaleoutsystems/fedn). Works locally on Docker + Kubernetes or against any MinIO/S3 store and K8s cluster.*
+*A attack and defense simulator for federated learning experiments on the MNIST dataset with [FEDn](https://github.com/scaleoutsystems/fedn). Works locally on Docker + Kubernetes or against any MinIO/S3 store and K8s cluster.*
 
 ---
 
@@ -8,11 +8,11 @@
 
 ```bash
 # 1 · Clone and enter the repo
-git clone https://github.com/<your‑org>/<repo>.git
-cd <repo>
+git clone [https://github.com/<your‑org>/<repo>.git](https://github.com/Dackeval/fedn_atttack_simulator.git)
+cd fedn_atttack_simulator
 
 # 2 · Create an isolated Python env
-python -m venv .venv
+python -m sim .venv
 source .venv/bin/activate   # Windows: .venv\Scripts\activate
 
 # 3 · Install Python dependencies
@@ -24,10 +24,7 @@ python tools/split_mnist.py \
   --iid iid \
   --balanced balanced
 
-# 5 · (Optional) upload the partitions to MinIO/S3
-python tools/split_mnist.py --push ...
-
-# 6 · Start the simulator (see §5 for the full workflow)
+# 6 · Before starting the simulator (see §5 for the full workflow)
 python test_simulation.py
 ```
 
@@ -49,7 +46,7 @@ python test_simulation.py
 | Helm     |    **v3.17.1** | [https://helm.sh/docs/intro/install/](https://helm.sh/docs/intro/install/)         |
 | kubectl  |    **v1.31.3** | [https://kubernetes.io/docs/tasks/tools/](https://kubernetes.io/docs/tasks/tools/) |
 
-⚠️ The simulator *should* work with newer versions, but the above are verified.
+The simulator *should* work with newer versions, but the above are verified.
 
 ---
 
@@ -77,27 +74,7 @@ If the file is missing, `data.py` pulls it from your object store using the envi
 
 These vars are injected into every **mnist‑sim** pod by the Helm chart (`examples/mnist‑pytorch/chart/values.yaml`).
 
-### 3.2 Mount a local volume (skip MinIO/S3)
-
-```yaml
-# values.yaml
-volumeMounts:
-  - name: mnist-data
-    mountPath: /app/data
-volumes:
-  - name: mnist-data
-    hostPath:
-      path: /absolute/path/on/host/mnist
-      type: Directory
-```
-
-Apply:
-
-```bash
-helm upgrade fedn charts/fedn -f values.yaml
-```
-
-### 3.3 Object‑store layout
+### 3.2 Object‑store layout
 
 ```
 fedn (bucket)
@@ -122,7 +99,7 @@ simulation:
   client_token: ""                         # Client Token (Studio)
   auth_token:   ""                         # Admin Token (Studio)
 
-  # ⚔️ Adversarial setup
+  # Adversarial setup
   attack_type:      label_flip_basic          # label_flip_basic | grad_boost_basic | little_is_enough |
                                                 # artificial_backdoor_05p_center | artificial_backdoor_05p |
                                                 # backdoor_35int
@@ -161,14 +138,8 @@ simulation:
 | -------------------- | -------------------------------------------------------------- |
 | `attack_type`        | Strategy executed by malicious clients                         |
 | `defense_type`       | Aggregation rule to mitigate attacks                           |
-| `pushfetch_or_fetch` | `pushfetch` – split ➜ upload ➜ train · `fetch` – only download |
+| `pushfetch_or_fetch` | `push` – split ➜ upload ➜ download · `fetch` – only download |
 | `late_client_*`      | Simulate stragglers joining late                               |
-
-Override any field on the CLI, e.g.:
-
-```bash
-SIMULATION_ROUNDS=50 python test_simulation.py
-```
 
 ---
 
@@ -204,35 +175,19 @@ FEDn spins up the aggregator, combiner, and `mnist‑sim` client pods. Progress 
 ## 6. Monitoring & Logs
 
 * **FEDn Studio** – model lineage, metrics, TensorBoard
-* `kubectl get pods` – watch Kubernetes pods
-* `fedn top` – live aggregation stats
-
+* `kubectl get pods` –A to see Kubernetes client pods
 ---
 
 ## 7. Tear‑down
 
 ```bash
-# Remove FEDn services (aggregator / combiner / studio)
-helm uninstall fedn
-
 # Remove the simulated client deployment
-kubectl delete deployment mnist-sim
+helm uninstall mnist-sim
 
-# Delete the namespace (optional)
-kubectl delete ns fedn
-
-# Purge the MinIO/S3 bucket (optional)
-minio rb --force s3://fedn
 ```
 
 ---
 
 ## 8. Contributing
 
-PRs are welcome! Please run:
-
-```bash
-pre-commit run --all-files
-```
-
-before pushing.
+PRs are welcome! 
