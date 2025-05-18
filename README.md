@@ -2,7 +2,7 @@
 
 *A attack and defense simulator for federated learning experiments on the MNIST dataset with [FEDn](https://github.com/scaleoutsystems/fedn). Works locally on Docker + Kubernetes or against any MinIO/S3 store and K8s cluster.
 
-Currently the simulator runs with the Mnist-Pytorch Example. *
+Currently the simulator only runs on the Mnist-Pytorch Example. *
 
 ---
 
