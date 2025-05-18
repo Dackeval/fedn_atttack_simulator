@@ -9,8 +9,8 @@ RUN apt-get update && apt-get install --no-install-recommends -y git gcc python3
 # Install python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the client code only
-COPY client /app/client
+# Copy the client code only, containing docker_client.py
+COPY client /app/client 
 COPY parameter_store /app/parameter_store
 #COPY data /app/data
 

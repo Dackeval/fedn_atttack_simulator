@@ -5,3 +5,9 @@ data
 .mnist-pytorch
 client.yaml
 values-temp.yaml
+visualization
+server_functions_old
+config_private.yaml
+server_functions_*.py
+server_functions_old
+.DS_Store

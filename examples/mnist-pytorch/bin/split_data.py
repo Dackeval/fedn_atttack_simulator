@@ -155,16 +155,6 @@ def dirichlet_label_skew_split(x, y, balanced, num_clients, alpha=0.5, seed=42):
     return x_list, y_list
 
 
-"""
-output_dir = "./data/mnist/dirichlet_balanced_alpha0.5_10_clients"
-os.makedirs(output_dir, exist_ok=True)
-
-for client_id, (x_client, y_client) in enumerate(zip(x_train_list, y_train_list), start=1):
-    client_path = os.path.join(output_dir, str(client_id))
-    os.makedirs(client_path, exist_ok=True)
-    torch.save({'x_train': x_client, 'y_train': y_client}, os.path.join(client_path, "mnist.pt"))
-    
-"""
 
 def split(n_splits, data_endpoint, data_access_key, data_secret_key, data_bucket_name, iid, balanced):
 

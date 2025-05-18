@@ -1,3 +1,6 @@
+# For User inputted parameters for the simulation, currently not used, but config.yaml is default.
+
+
 from fedn import APIClient
 import os
 from bin.split_data import split as sd
@@ -74,8 +77,13 @@ def get_valid_mitigation_type(prompt):
 
 
 def helper():
-    # Simulator parameter inputs
-    # ----------------------------
+    """
+    helper function to get the parameters for the simulation
+    """
+    print("Welcome to the Attack Simulator!\n")
+
+    # simulator parameter inputs
+    # -----------------------------------------------------
     COMBINER_IP = input("Enter host IP: ")
     print(f"Combiner IP: {COMBINER_IP} is set\n")
 
@@ -137,19 +145,16 @@ def helper():
     else:
         print("Invalid input. Defaulting to balanced.")
         BALANCED = "balanced"
+    # -----------------------------------------------------
     
-    
-    # SPLIT DATA
-    # ------------------------------
+    # split data
     total_clients = BENIGN_CLIENTS + MALICIOUS_CLIENTS
     pushfetch_or_fetch = input("Do you want to split, push and fetch data partitions or only fetch the data partitions remotely? (push/fetch): ")
     if pushfetch_or_fetch == "push":
         sd(total_clients, DATA_ENDPOINT, DATA_ACCESS_KEY, DATA_SECRET_KEY, DATA_BUCKET_NAME, IID, BALANCED)
 
-    # UPLOAD PACKAGE AND SEED MODEL
-    # ------------------------------
+    # old code, fetches token and client for downstream tasks 
     AUTH_TOKEN, client = send_seed_and_package(COMBINER_IP)
-    #set_server_function(COMBINER_IP, AUTH_TOKEN, client)
 
     return (COMBINER_IP, CLIENT_TOKEN, ATTACK_TYPE, inflation_factor, BATCH_SIZE, EPOCHS, LEARNING_RATE, DEFENSE_TYPE, BENIGN_CLIENTS, MALICIOUS_CLIENTS, DATA_ENDPOINT, DATA_ACCESS_KEY, DATA_SECRET_KEY, DATA_BUCKET_NAME, AUTH_TOKEN, client, IID, BALANCED)
 
@@ -157,34 +162,11 @@ def helper():
 def send_seed_and_package(COMBINER_IP):
     DISCOVER_HOST = COMBINER_IP.removeprefix('https://')
     client_path = os.path.join(os.path.dirname(__file__), 'client')
-    seed_model_path = os.path.join(client_path, 'seed.npz')
 
-    try:
-        auth_token = str(input("Enter auth_token: "))
+    auth_token = str(input("Enter auth_token: "))
 
-        os.environ["FEDN_AUTH_TOKEN"] = auth_token
-        client = APIClient(host=DISCOVER_HOST, secure=True, verify=True)
-
-        # Upload seed model and package
-        client.set_active_model(seed_model_path)
-        package_name = str(input('Enter package name: '))
-        client.set_active_package('./client/package.tgz', 'numpyhelper', package_name)
-
-        print(f"API Client connected to combiner at: {DISCOVER_HOST}")
-    except Exception as e:
-        print(f"Error connecting to combiner: {e}")
-
-        COMBINER_IP = input("Enter host IP: ")
-        print(f"Combiner IP: {DISCOVER_HOST} is set")
-        auth_token = str(input("Enter auth_token: "))
-        print(f"Token: {auth_token} is set")
-
-        os.environ["FEDN_AUTH_TOKEN"] = auth_token
-        client = APIClient(host=COMBINER_IP, secure=True, verify=True)
-
-        client.set_active_model(seed_model_path)
-        client.set_active_package('./client/package.tgz', 'numpyhelper', package_name)
-        print(f"API Client connected to combiner at: {DISCOVER_HOST}")
+    os.environ["FEDN_AUTH_TOKEN"] = auth_token
+    client = APIClient(host=DISCOVER_HOST, secure=True, verify=True)
 
     return auth_token, client
 

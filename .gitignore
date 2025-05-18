@@ -1,2 +1,9 @@
 fedn_env/
 examples/mnist-pytorch/values-temp.yaml
+examples/mnist-pytorch/config_private.yaml
+examples/mnist-pytorch/server_functions_old
+examples/mnist-pytorch/server_functions_*.py
+.DS_Store
+# Byte-code caches
+__pycache__/
+*.py[cod]

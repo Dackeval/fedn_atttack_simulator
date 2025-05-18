@@ -8,6 +8,7 @@ import random
 import string
 import logging
 import os
+import json
 
 logger = logging.getLogger("fedn")
 logging.basicConfig(level=logging.INFO)
@@ -53,18 +54,27 @@ def main(api_url: str, api_port: int, token: str = None):
 
     url = get_api_url(api_url, api_port)
 
-    mal_bool = os.environ.get("MALICIOUS", "false").strip().lower()
-    client_id = os.environ.get("CLIENT_ID", "none")
+    mal      = os.getenv("MALICIOUS", "false").strip().lower()
+    cid_str  = os.getenv("CLIENT_ID", "0")
+    defence  = os.getenv("DEFENSE_TYPE", "fedavg")
 
-    if mal_bool == "true":
-        name = f"malicious_client_{client_id}"
-    else:
-        name = f"benign_client_{client_id}"
+    delay    = int(os.getenv("LATE_CLIENT_DELAY", "0"))
+    try:
+        late_ind = sorted(json.loads(os.getenv("LATE_CLIENT_IND", "[]")))
+    except Exception:
+        late_ind = []
+
+    cid_int  = int(cid_str)
+    role     = "malicious" if mal == "true" else "benign"
+
+    suffix = ""
+    if delay > 0 and late_ind:                       # if any late-client config present
+        late_list_str = "-".join(map(str, late_ind)) # e.g. "1-2-5"
+        suffix = f"_delay{delay}_late{late_list_str}"
+
+    name = f"{role}_client_{cid_int}_{defence}{suffix}"
     
-    #name = generate_variable_name()
     fedn_client.set_name(name)
-    
-    #client_id = str(uuid.uuid4())
     client_id = name
     fedn_client.set_client_id(client_id)
 

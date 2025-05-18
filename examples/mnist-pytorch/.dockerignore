@@ -14,3 +14,5 @@ seed.npz
 *.tar.gz
 analytics/
 values-temp.yaml
+config.yaml
+server_functions_*.py

@@ -4,7 +4,6 @@ from helper_simulation import helper
 import time
 import os
 
-from server_functions_DNC import ServerFunctions as DNC
 from server_functions_KRUM import ServerFunctions as KRUM
 from server_functions_Multi_KRUM import ServerFunctions as Multi_KRUM
 from server_functions_TrMean import ServerFunctions as TrMean

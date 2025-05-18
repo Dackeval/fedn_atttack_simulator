@@ -39,3 +39,5 @@ clients:
     data_iid: ""
 
 defense_type: "none"
+late_client_ind: []
+late_client_delay: 0

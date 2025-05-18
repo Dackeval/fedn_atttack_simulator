@@ -1,3 +1,4 @@
+# loop through clients and create a deployment for each
 {{- range $client := .Values.clients }}
 ---
 apiVersion: apps/v1
@@ -35,6 +36,12 @@ spec:
               value: "{{ $.Values.malicious.replicas | toString }}"
             - name: BENIGN_CLIENTS
               value: "{{ $.Values.benign.replicas | toString }}"
+            - name: DEFENSE_TYPE
+              value: "{{ $.Values.defense_type | toString }}"
+            - name: LATE_CLIENT_IND
+              value: "{{ $.Values.late_client_ind | toJson }}"
+            - name: LATE_CLIENT_DELAY
+              value: "{{ $.Values.late_client_delay | toString }}"
 
             - name: CLIENT_ID
               value: "{{ $client.id | toString }}"

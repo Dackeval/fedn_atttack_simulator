@@ -1,0 +1,36 @@
+# Simulator configuration file for MNIST dataset using PyTorch
+
+simulation:
+  combiner_ip: "https://api.fedn.scaleoutsystems.com/...."  
+  client_token: ""
+  auth_token: ""
+
+  # Attack & Defense
+  attack_type: "label_flip_basic"       # Options: label_flip_basic, grad_boost_basic, little_is_enough, artificial_backdoor_05p_center, artificial_backdoor_05p, backdoor_35int
+  inflation_factor: 2                   # Inflation factor only for grad_boost_basic
+  defense_type: "Multi-KRUM"                # Options: DNC, KRUM, Multi-KRUM, TrMean, FedAvg, EE_DNC, EE_Multi-KRUM
+
+  # Training hyperparameters
+  batch_size: 32
+  epochs: 1
+  learning_rate: 0.01
+
+  # Data & Clients
+  benign_clients: 1   # Number of benign clients
+  malicious_clients: 1 # Number of malicious clients
+  data_endpoint: "" 
+  data_access_key: "" 
+  data_secret_key: ""
+  data_bucket_name: ""
+
+  iid: "iid"
+  balanced: "balanced"
+
+  pushfetch_or_fetch: "fetch"
+
+  # Late policy, benign clients are the first indices of the total number of clients and malicious clients are the last indices
+  late_client_ind: [1]
+  late_client_delay: 5 # how many rounds the late clients will be delayed
+
+  # Session, length of the session
+  rounds: 30
