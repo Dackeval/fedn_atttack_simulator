@@ -6,15 +6,13 @@ class ServerFunctions(ServerFunctionsBase):
     def __init__(self):
         super().__init__()
 
-        # -------- one-time init flags ---------------------------------
-        self.initialised      = False              # bootstrap flag
         self.aggregator_type  = "fedavg"
 
-        # -------- late-client state ----------------------------------
+        #  late-client state 
         self.late_delay       = 0                  # skip rounds
         self.late_set         = set()              # indices
 
-        # -------- learning-rate / session control --------------------
+        #  learning-rate / session control 
         self.round            = 0                  # global round counter
         self.lr               = 0.1
         self.lr_decay_period  = 10                 # decay every 10 rounds
@@ -23,9 +21,7 @@ class ServerFunctions(ServerFunctionsBase):
         self.selected_clients_per_round = {}
         self.used_clients_per_round = {}
 
-    # ----------------------------------------------------------------
     #  helper: parse client-id into idx / defense / delay / late list
-    # ----------------------------------------------------------------
     def _quick_parse(self, cid: str):
         parts = cid.split("_")
         if len(parts) < 4 or parts[1] != "client":
@@ -43,19 +39,17 @@ class ServerFunctions(ServerFunctionsBase):
 
 
     def client_selection(self, client_ids: List[str]) -> List[str]:
-        if not self.initialised:                         # first call only
-            for cid in client_ids:
-                try:
-                    _, defense, delay, late_list = self._quick_parse(cid)
-                    self.aggregator_type = defense
-                    self.late_delay      = delay
-                    self.late_set        = set(late_list)
-                    break
-                except Exception:
-                    continue
-            logger.info(f"[BOOT] aggregator={self.aggregator_type} "
-                        f"late_delay={self.late_delay} late_set={sorted(self.late_set)}")
-            self.initialised = True
+        for cid in client_ids:
+            try:
+                _, defense, delay, late_list = self._quick_parse(cid)
+                self.aggregator_type = defense
+                self.late_delay      = delay
+                self.late_set        = set(late_list)
+                break
+            except Exception:
+                continue
+        logger.info(f"[CFG] aggregator={self.aggregator_type} "
+                    f"late_delay={self.late_delay} late_set={sorted(self.late_set)}")
 
         allowed = []
         for cid in client_ids:
