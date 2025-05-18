@@ -1,6 +1,5 @@
 import subprocess
 import yaml
-from helper_simulation import helper
 from fedn import APIClient
 import time
 import os
