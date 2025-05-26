@@ -18,7 +18,8 @@ python -m sim .venv
 source .venv/bin/activate   # Windows: .venv\Scripts\activate
 
 # 3 · Install Python dependencies
-pip install -r requirements.txt
+pip install -r examples
+/mnist-pytorch/requirements.txt
 
 # 4 · Before starting the simulator (see §5 for the full workflow)
 python test_simulation.py
