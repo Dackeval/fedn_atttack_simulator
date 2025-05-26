@@ -94,7 +94,7 @@ simulation:
   # FEDn connection
   combiner_ip: "https://<combiner-host>"   # gRPC endpoint (see Studio)
   client_token: ""                         # Client Token (Studio)
-  auth_token:   ""                         # Admin Token (Studio)
+  auth_token:   ""                         # Admin Token (Studio)* auth_token is Admin Token on FEDn 
 
   # Adversarial setup
   attack_type:      label_flip_basic          # label_flip_basic | grad_boost_basic | little_is_enough |
