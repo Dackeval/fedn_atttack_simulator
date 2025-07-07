@@ -203,7 +203,7 @@ We ran **180+ simulations** crossing
 
 ### 8.3 Key take-aways
 
-| Aggregator | TL;DR |
+| Aggregator | Key take-aways |
 |------------|-------|
 | **Trimmed-Mean (TrMean)** | Mitigates some poisoning but never fully excludes an malicious update. |
 | **Multi-KRUM** | Achieves relatively high accuracy. However model performance can drop sharply when the data heterogeneity increases. |
