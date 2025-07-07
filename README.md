@@ -187,7 +187,7 @@ helm uninstall mnist-sim
 ---
 ## 8. Results
 <img width="452" alt="111" src="https://github.com/user-attachments/assets/4d799674-2b29-4755-a75c-2e6e30bcdb81" />
-<img width="492" alt="11" src="https://github.com/user-attachments/assets/ec737126-1129-43a0-8539-66e613b11d37" />
+<img width="452" alt="11" src="https://github.com/user-attachments/assets/ec737126-1129-43a0-8539-66e613b11d37" />
 
 
 
