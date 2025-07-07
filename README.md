@@ -92,7 +92,7 @@ fedn (bucket)
 ```yaml
 simulation:
   # FEDn connection
-  combiner_ip: "https://<combiner-host>"   # gRPC endpoint (see Studio)
+  combiner_ip: "https://<FEDn project URL>"   # Project URL (see Studio)
   client_token: ""                         # Client Token (Studio)
   auth_token:   ""                         # Admin Token (Studio)* auth_token is Admin Token on FEDn 
 
