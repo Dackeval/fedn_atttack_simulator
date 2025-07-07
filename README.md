@@ -188,7 +188,7 @@ helm uninstall mnist-sim
 ## 8. Results
 <img width="500" alt="11" src="https://github.com/user-attachments/assets/052e89f6-7137-4d55-9c50-44d3b67b80ef" />
 <img width="500" alt="12" src="https://github.com/user-attachments/assets/56b9686e-2f74-4757-b81d-982bb6803694" />
-**Label-Flipping attack · non-IID label split · *Partially Imbalanced* data volumes.  (Tables 4.5 – 4.6 in the report)**
+# Label-Flipping attack · non-IID label split · *Partially Imbalanced* data volumes.  (Tables 4.5 – 4.6 in the report)
 
 
 ## 9. Contributing
