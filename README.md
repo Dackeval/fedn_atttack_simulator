@@ -185,10 +185,34 @@ helm uninstall mnist-sim
 ```
 
 ---
-## 8. Results
-<img width="500" alt="11" src="https://github.com/user-attachments/assets/052e89f6-7137-4d55-9c50-44d3b67b80ef" />
-<img width="500" alt="12" src="https://github.com/user-attachments/assets/56b9686e-2f74-4757-b81d-982bb6803694" />
-**Label-Flipping attack · non-IID label split · Partially Imbalanced data volumes.  (Tables 4.5 – 4.6 in the report)**
+## 8. Results (quick overview)
+
+### 8.1 Label-Flipping · non-IID · partially imbalanced
+![Test accuracy per round – benign clients](https://github.com/user-attachments/assets/052e89f6-7137-4d55-9c50-44d3b67b80ef)
+![Test accuracy per round – malicious clients](https://github.com/user-attachments/assets/56b9686e-2f74-4757-b81d-982bb6803694)
+
+<sup>*Tables 4.5 – 4.6 in the thesis.*</sup>
+
+### 8.2 Experimental grid  
+We ran **180+ simulations** crossing
+
+* **Attacks:** Label-Flipping · Little-Is-Enough  
+* **Data regimes:** IID Balanced / IID Imbalanced / non-IID Balanced / non-IID Imbalanced
+* **Late join:** Benign *or* Malicious clients injected from round 5
+* **5 AGRs:** FedAvg, TrMean, Multi-KRUM, DNC, EE-TrMean
+
+### 8.3 Key take-aways
+
+| Aggregator | TL;DR |
+|------------|-------|
+| **Trimmed-Mean (TrMean)** | Mitigates some poisoning but never fully excludes an malicious update. |
+| **Multi-KRUM** | Achieves relatively high accuracy. However model performance can drop sharply when the data heterogeneity increases. |
+| **Divide-and-Conquer (DNC)** | Achieves relatively high accuracy and prunes malicious updates, though limited by *f = 1* in this study. |
+| **EE-TrMean** | Novel adaptive AGR using the TrMean rule with an epsilon greedy algorithm and a alfa ramp. Achieved some of the highest accuracies, malicious exclusion and inclusion of late benign clients. However at times excluded an honest-but-different client. |
+
+---
+
+📄 **Full 12-table grid, plots & methodology** → 
 
 
 ## 9. Contributing
