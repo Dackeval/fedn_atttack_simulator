@@ -185,11 +185,14 @@ helm uninstall mnist-sim
 ```
 
 ---
+## 8. Results
 
-## 8. Contributing
+
+
+## 9. Contributing
 
 PRs are welcome! 
 
-## 9. Contact
+## 10. Contact
 
 Email: Sigge.dackevall@gmail.com
