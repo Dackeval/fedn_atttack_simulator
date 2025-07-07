@@ -191,7 +191,7 @@ helm uninstall mnist-sim
 ![Test accuracy per round – benign clients](https://github.com/user-attachments/assets/052e89f6-7137-4d55-9c50-44d3b67b80ef)
 ![Test accuracy per round – malicious clients](https://github.com/user-attachments/assets/56b9686e-2f74-4757-b81d-982bb6803694)
 
-<sup>*Tables 4.5 – 4.6 in the thesis.*</sup>
+**Tables 4.5** **–** **4.6 in the thesis.**
 
 ### 8.2 Experimental grid  
 We ran **180+ simulations** crossing
