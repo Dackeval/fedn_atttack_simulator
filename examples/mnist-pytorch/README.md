@@ -1,6 +1,8 @@
 # FEDn Attack Simulator
 
-*A attack and defense simulator for federated learning experiments on the MNIST dataset with [FEDn](https://github.com/scaleoutsystems/fedn). Works locally on Docker + Kubernetes or against any MinIO/S3 store and K8s cluster.*
+*A attack and defense simulator for federated learning experiments on the MNIST dataset with [FEDn](https://github.com/scaleoutsystems/fedn). Works locally on Docker + Kubernetes or against any MinIO/S3 store and K8s cluster.
+
+Currently the simulator only runs on the Mnist-Pytorch Example. *
 
 ---
 
@@ -90,9 +92,9 @@ fedn (bucket)
 ```yaml
 simulation:
   # FEDn connection
-  combiner_ip: "https://<combiner-host>"   # gRPC endpoint (see Studio)
+  combiner_ip: "https://<FEDn project URL>"   # Project URL (see Studio)
   client_token: ""                         # Client Token (Studio)
-  auth_token:   ""                         # Admin Token (Studio)
+  auth_token:   ""                         # Admin Token (Studio)* auth_token is Admin Token on FEDn 
 
   # Adversarial setup
   attack_type:      label_flip_basic          # label_flip_basic | grad_boost_basic | little_is_enough |
@@ -151,7 +153,7 @@ simulation:
 
    ```bash
    export FEDN_AUTH_TOKEN=<access-token> # available on Studio under clients
-   fedn studio login -u <user> -P <password> -H <studio_host>
+   fedn studio login -u <user> -P <pwd> -H <studio_host>
    fedn project set-context -id <project_id> -H <studio_host>
    fedn model set-active -f model.npz -H <studio_host>
    ```
@@ -164,7 +166,7 @@ simulation:
 
    The script prompts you to reuse/create data partitions and asks for a **session name** (e.g. `mnist-iid-balanced-10c-2025-05-18`).
 
-The simulator spins up the `mnist‑sim` client pods. 
+The simulator spins up `mnist‑sim` client pods. 
 
 ---
 
@@ -183,12 +185,58 @@ helm uninstall mnist-sim
 ```
 
 ---
+## 8. Results (quick overview)
 
-## 8. Contributing
+### 8.1 Label-Flipping · IID · balanced
+<img width="500" alt="1" src="https://github.com/user-attachments/assets/ef900380-bb40-4432-9be5-13c192848dc2" />
+<img width="500" alt="2" src="https://github.com/user-attachments/assets/f2c40f32-8873-4090-b572-6aa862ea230f" />
+
+### 8.2 Label-Flipping · IID · imbalanced
+<img width="500" alt="3" src="https://github.com/user-attachments/assets/e9aead81-bf5f-48f5-9449-7247cf70cf2a" />
+<img width="500" alt="4" src="https://github.com/user-attachments/assets/ee57dc35-0388-480f-992b-475196693d5f" />
+
+### 8.3 Label-Flipping · non-IID · partially imbalanced
+<img src="https://github.com/user-attachments/assets/56b9686e-2f74-4757-b81d-982bb6803694" alt="Accuracy – malicious clients" width="500" />
+<img src="https://github.com/user-attachments/assets/052e89f6-7137-4d55-9c50-44d3b67b80ef" alt="Accuracy – benign clients"  width="500" />
+
+### 8.4 Label-Flipping · non-IID · imbalanced
+<img width="500" alt="7" src="https://github.com/user-attachments/assets/fd2ed454-85fe-42b8-a1f5-a3fe5f60d658" />
+<img width="500" alt="8" src="https://github.com/user-attachments/assets/66b82ae2-8261-4bfe-8c24-9bc47326dbd5" />
+
+### 8.5 Little-is-Enough · IID · imbalanced
+<img width="500" alt="9" src="https://github.com/user-attachments/assets/6519c2bb-602f-49ed-8c95-3682d2f3ec03" />
+<img width="500" alt="10" src="https://github.com/user-attachments/assets/414c5a7a-f3a9-4c3c-8c5d-9c9f69b71572" />
+
+### 8.6 Little-is-Enough · non-IID · partially imbalanced
+<img width="500" alt="11" src="https://github.com/user-attachments/assets/eb994ee6-2eb8-4ca1-91e4-9edde93f1b67" />
+<img width="500" alt="12" src="https://github.com/user-attachments/assets/c1f6fc02-9e61-4c0b-a996-833bb82cf2fb" />
+
+### 8.3 Experimental grid  
+We ran **180+ simulations** crossing
+
+* **Attacks:** Label-Flipping · Little-Is-Enough  
+* **Data regimes:** IID Balanced / IID Imbalanced / non-IID Balanced / non-IID Imbalanced
+* **Late join:** Benign *or* Malicious clients injected from round 5
+* **5 AGRs:** FedAvg, TrMean, Multi-KRUM, DNC, EE-TrMean
+
+### 8.3 Key take-aways
+
+| Aggregator | Key take-aways |
+|------------|-------|
+| **Trimmed-Mean (TrMean)** | Mitigates some poisoning but never fully excludes an malicious update. |
+| **Multi-KRUM** | Achieves relatively high accuracy. However model performance can drop sharply when the data heterogeneity increases. |
+| **Divide-and-Conquer (DNC)** | Achieves relatively high accuracy and prunes malicious updates, though limited by *f = 1* in this study. |
+| **EE-TrMean** | Novel adaptive AGR using the TrMean rule with an epsilon greedy algorithm and a alfa ramp. Achieved some of the highest accuracies, malicious exclusion and inclusion of late benign clients. However at times excluded an honest-but-different client. |
+
+---
+
+📄 **Find the full thesis here!** → https://github.com/Dackeval/fedn_atttack_simulator/blob/K8/Master%20Thesis.pdf
+
+
+## 9. Contributing
 
 PRs are welcome! 
 
+## 10. Contact
 
-## 9. Contact
-
-Email: Sigge.Dackevall@gmail.com
+Email: Sigge.dackevall@gmail.com
