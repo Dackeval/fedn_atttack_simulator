@@ -10,6 +10,7 @@ import numpy as np
 from collections import defaultdict
 
 def splitset(x, y, num_clients, balanced, seed=42):
+    # 
     num_classes = len(np.unique(y))
     total_samples = len(x)
     np.random.seed(seed)
@@ -30,26 +31,33 @@ def iid_unbalanced_split(x, y, num_clients, min_samples_prop=0.1, seed=42):
     - The label distribution is the same for all clients (like full dataset),
     - The total # of samples per client can differ (unbalanced).
     """
+    # for reproducibility
     np.random.seed(seed)
 
+    # total number of samples and number of classes
     total_samples = len(x)
     num_classes = len(np.unique(y))
 
-    # Decide how many total samples each client gets
-    # (We sample from Dirichlet, but ensure no client is under min_samples)
+    # sample from Dirichlet, but ensure no client is under min_samples
     client_sizes = np.random.dirichlet(alpha=np.ones(num_clients)) * total_samples
     client_sizes = client_sizes.astype(int)
     min_samples = total_samples / num_clients * min_samples_prop
 
+    # if any client has less than min_samples, resample
     while np.any(client_sizes < min_samples):
         client_sizes = np.random.dirichlet(alpha=np.ones(num_clients)) * total_samples
         client_sizes = client_sizes.astype(int)
 
     # Count how many of each class there is in the entire dataset
+    # Count how many of each class there is in the entire dataset
     class_indices = {}
+    # loop over each class and get indices
     for c in range(num_classes):
+        # get indices of samples with class c
         class_indices[c] = np.where(y == c)[0]
+        # shuffle the indices for randomness
         np.random.shuffle(class_indices[c])
+    # Count how many samples of each class there are in the entire dataset
     class_counts = {c: len(class_indices[c]) for c in range(num_classes)}
 
     # Keep track of where we are for each class as we assign to each client
@@ -61,9 +69,6 @@ def iid_unbalanced_split(x, y, num_clients, min_samples_prop=0.1, seed=42):
     # For each client i, pick the same fraction of each class
     for i in range(num_clients):
         n_i = client_sizes[i]  # total samples for client i
-
-        # fraction of each class for the entire dataset
-        # multiply that fraction by n_i
         x_client = []
         y_client = []
 
@@ -77,14 +82,15 @@ def iid_unbalanced_split(x, y, num_clients, min_samples_prop=0.1, seed=42):
 
             # guard if we run out of indices
             end = min(end, len(class_indices[c]))
-
+            # if we run out of indices, we just take what we have
             selected_indices = class_indices[c][start:end]
             class_ptrs[c] = end  # move the pointer
 
-            # accumulate
+            # accumulate the selected indices
             x_client.append(x[selected_indices])
             y_client.append(y[selected_indices])
 
+        # Concatenate the selected samples for this client and convert to tensors
         x_list.append(torch.from_numpy(np.concatenate(x_client, axis=0)))
         y_list.append(torch.from_numpy(np.concatenate(y_client, axis=0)))
 
@@ -95,14 +101,18 @@ def dirichlet_label_skew_split(x, y, balanced, num_clients, alpha=0.5, seed=42):
     """
     Non-IID + Unbalanced: Dirichlet over label distribution AND per-client sample count.
     """
+    # for reproducibility
     np.random.seed(seed)
-
+    # total number of samples and number of classes
     num_classes = len(np.unique(y))
     total_samples = len(x)
+    # if balanced, each client gets the same number of samples
     if balanced:
         samples_per_client = len(x) // num_clients
         client_sizes = np.array([samples_per_client] * num_clients)    
+    # if unbalanced, each client gets a different number of samples
     else:
+        # minimum number of samples per client
         min_samples_prop = 0.1
         min_samples = (total_samples / num_clients) * min_samples_prop # minimum samples per client
 
@@ -110,21 +120,24 @@ def dirichlet_label_skew_split(x, y, balanced, num_clients, alpha=0.5, seed=42):
         client_sizes = np.random.dirichlet(alpha=np.ones(num_clients)) * total_samples
         client_sizes = client_sizes.astype(int)
 
-        # minimum number of samples per client
+        # if any client has less than min_samples, resample
         while np.any(client_sizes < min_samples):
             client_sizes = np.random.dirichlet(alpha=np.ones(num_clients)) * total_samples
             client_sizes = client_sizes.astype(int)
     
-
+    # ensure that the total number of samples is equal to the original dataset
     class_indices = {c: np.where(y == c)[0] for c in range(num_classes)}
+    # shuffle the indices for randomness
     for c in class_indices:
         np.random.shuffle(class_indices[c])
+    # Count how many samples of each class there are in the entire dataset
     class_ptr = {c: 0 for c in range(num_classes)}
 
     x_list = []
     y_list = []
-
+    # loop over each client
     for i in range(num_clients):
+        # number of samples for this client, class proportions from Dirichlet distribution
         n_samples = client_sizes[i]
         proportions = np.random.dirichlet(np.repeat(alpha, num_classes))
         class_counts = (proportions * n_samples).astype(int)
@@ -138,6 +151,7 @@ def dirichlet_label_skew_split(x, y, balanced, num_clients, alpha=0.5, seed=42):
         x_client = []
         y_client = []
 
+        # loop over each class and get the samples for this client
         for c in range(num_classes):
             count = class_counts[c]
             start = class_ptr[c]
@@ -158,12 +172,24 @@ def dirichlet_label_skew_split(x, y, balanced, num_clients, alpha=0.5, seed=42):
 
 def split(n_splits, data_endpoint, data_access_key, data_secret_key, data_bucket_name, iid, balanced):
 
-    # params to be set, possibly update to prompt user for these
+    """
+    Split the MNIST dataset into n_splits clients with iid or non-iid data.
+    Args:
+        n_splits (int): Number of clients to split the data into.
+        data_endpoint (str): Endpoint for the MinIO server.
+        data_access_key (str): Access key for the MinIO server.
+        data_secret_key (str): Secret key for the MinIO server.
+        data_bucket_name (str): Bucket name to store the data.
+        iid (str): 'iid' or 'noniid' to specify the type of data distribution.
+        balanced (str): 'balanced' or 'unbalanced' to specify the type of data distribution.
+    """
+    # reproducibility
     seed = 42
+    # create output directory
     out_dir = './data/mnist'
     if not os.path.exists(out_dir):
         os.mkdir(out_dir)
-
+    # download MNIST dataset
     train_data = torchvision.datasets.MNIST(
         root=f'{out_dir}/train', transform=torchvision.transforms.ToTensor, train=True, download=True)
     test_data = torchvision.datasets.MNIST(

@@ -1,9 +1,9 @@
 # Simulator configuration file for MNIST dataset using PyTorch
 
 simulation:
-  combiner_ip: "https://api.fedn.scaleoutsystems.com/...."  
-  client_token: ""
-  auth_token: ""
+  combiner_ip: "https://<project_url_here>"  # Replace with FEDN project URL
+  client_token: "<your_client_token_here>"  # Replace with your actual client token
+  auth_token: "<your_auth_token_here>"  # Replace with your actual auth token
 
   # Attack & Defense
   attack_type: "label_flip_basic"       # Options: label_flip_basic, grad_boost_basic, little_is_enough, artificial_backdoor_05p_center, artificial_backdoor_05p, backdoor_35int
@@ -16,12 +16,12 @@ simulation:
   learning_rate: 0.01
 
   # Data & Clients
-  benign_clients: 1   # Number of benign clients
-  malicious_clients: 1 # Number of malicious clients
-  data_endpoint: "" 
+  benign_clients: 2   # Number of benign clients
+  malicious_clients: 0 # Number of malicious clients
+  data_endpoint: "s3.eu-north-1.amazonaws.com" 
   data_access_key: "" 
   data_secret_key: ""
-  data_bucket_name: ""
+  data_bucket_name: "simulator-mnist-data-bucket"
 
   iid: "iid"
   balanced: "balanced"

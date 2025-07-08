@@ -11,6 +11,7 @@ from model import save_parameters, compile_model, load_parameters
 from load_environment_param import load_env_params
 from attacks import *
 from fedn import APIClient
+from attacks import label_flip
 
 
 logger = logging.getLogger("fedn")
@@ -43,25 +44,6 @@ def train(model):
     logger.info(f"[TRAIN] client_index={client_index_str}, malicious={malicious}, attack={attack}")
     logger.info(f"[TRAIN] final hyperparams: epochs={epochs}, batch_size={batch_size}, lr={lr}, inflation_factor={inflation_factor}")
 
-    # Implement different version of training for malicious clients
-    if malicious:
-        match attack:
-            case 'label_flip_basic':
-                y_train = label_flip(y_train)
-            case 'backdoor_35int':
-                x_train, y_train = backdoor_35int(x_train, y_train)
-            case 'artificial_backdoor_05p':
-                x_train, y_train = artificial_backdoor_05p(x_train, y_train)
-            case 'artificial_backdoor_05p_center':
-                x_train, y_train = artificial_backdoor_05p_center(x_train, y_train)
-            case None:
-                if attack == 'little_is_enough':
-                    logger.info('LIE attack')
-                else:
-                    logger.warning('No attack was specified for the malicious client.')
-            case _:
-                logger.info("DO NOTHING!")
-
     if attack == 'little_is_enough' and malicious:
         logger.info("This client is running a LIE attack!")
         pull_factor = 2
@@ -83,7 +65,7 @@ def train(model):
             
             updated_model_parameters_np = []
             for i in range(len(global_model_parameters_t)):
-                updated_model_parameters_np.append(global_model_parameters_t[i] - pull_factor * mal_power * (global_model_parameters_t_2[i] - global_model_parameters_t[i]))
+                updated_model_parameters_np.append(global_model_parameters_t_2[i] - pull_factor * mal_power * (global_model_parameters_t[i] - global_model_parameters_t_2[i]))
             
             model = compile_model()
             params_dict = zip(model.state_dict().keys(), updated_model_parameters_np)
@@ -112,6 +94,10 @@ def train(model):
                     if b % 100 == 0:
                         logger.info(
                             f"Epoch {e}/{epochs-1} | Batch: {b}/{n_batches-1} | Loss: {loss.item()}")
+    
+    elif attack == 'label_flip_basic' and malicious:
+        y_train = label_flip(y_train)
+        
     else:
         # Train
         optimizer = torch.optim.SGD(model.parameters(), lr=lr)
