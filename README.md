@@ -190,32 +190,26 @@ helm uninstall mnist-sim
 ### 8.1 Label-Flipping · IID · balanced
 <img width="500" alt="1" src="https://github.com/user-attachments/assets/ef900380-bb40-4432-9be5-13c192848dc2" />
 <img width="500" alt="2" src="https://github.com/user-attachments/assets/f2c40f32-8873-4090-b572-6aa862ea230f" />
-**Tables 4.1** **–** **4.2 in the thesis.**
 
 ### 8.2 Label-Flipping · IID · imbalanced
 <img width="500" alt="3" src="https://github.com/user-attachments/assets/e9aead81-bf5f-48f5-9449-7247cf70cf2a" />
 <img width="500" alt="4" src="https://github.com/user-attachments/assets/ee57dc35-0388-480f-992b-475196693d5f" />
-**Tables 4.3** **–** **4.4 in the thesis.**
 
 ### 8.3 Label-Flipping · non-IID · partially imbalanced
 <img src="https://github.com/user-attachments/assets/56b9686e-2f74-4757-b81d-982bb6803694" alt="Accuracy – malicious clients" width="500" />
 <img src="https://github.com/user-attachments/assets/052e89f6-7137-4d55-9c50-44d3b67b80ef" alt="Accuracy – benign clients"  width="500" />
-**Tables 4.5** **–** **4.6 in the thesis.**
 
 ### 8.4 Label-Flipping · non-IID · imbalanced
 <img width="500" alt="7" src="https://github.com/user-attachments/assets/fd2ed454-85fe-42b8-a1f5-a3fe5f60d658" />
 <img width="500" alt="8" src="https://github.com/user-attachments/assets/66b82ae2-8261-4bfe-8c24-9bc47326dbd5" />
-**Tables 4.8** **–** **4.9 in the thesis.**
 
 ### 8.5 Little-is-Enough · IID · imbalanced
 <img width="500" alt="9" src="https://github.com/user-attachments/assets/6519c2bb-602f-49ed-8c95-3682d2f3ec03" />
 <img width="500" alt="10" src="https://github.com/user-attachments/assets/414c5a7a-f3a9-4c3c-8c5d-9c9f69b71572" />
-**Tables 4.10** **–** **4.11 in the thesis.**
 
 ### 8.6 Little-is-Enough · non-IID · partially imbalanced
 <img width="500" alt="11" src="https://github.com/user-attachments/assets/eb994ee6-2eb8-4ca1-91e4-9edde93f1b67" />
 <img width="500" alt="12" src="https://github.com/user-attachments/assets/c1f6fc02-9e61-4c0b-a996-833bb82cf2fb" />
-**Tables 4.12** **–** **4.13 in the thesis.**
 
 ### 8.3 Experimental grid  
 We ran **180+ simulations** crossing
