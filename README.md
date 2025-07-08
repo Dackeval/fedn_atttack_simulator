@@ -230,7 +230,7 @@ We ran **180+ simulations** crossing
 
 ---
 
-📄 **Find the full thesis here!** → 
+📄 **Find the full thesis here!** → https://github.com/Dackeval/fedn_atttack_simulator/blob/K8/Master%20Thesis.pdf
 
 
 ## 9. Contributing
