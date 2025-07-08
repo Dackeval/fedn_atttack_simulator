@@ -230,7 +230,7 @@ We ran **180+ simulations** crossing
 
 ---
 
-📄 **Full 12-table grid, plots & methodology** → 
+📄 **Find the full thesis here!** → 
 
 
 ## 9. Contributing
